@@ -1,0 +1,1 @@
+ALTER TABLE "borrow_records" ALTER COLUMN "borrow_date" SET NOT NULL;

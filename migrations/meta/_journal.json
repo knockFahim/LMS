@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1735823044525,
+      "tag": "0000_worthless_invaders",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1735824142407,
+      "tag": "0001_lucky_shape",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1735824235232,
+      "tag": "0002_special_vapor",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1735915636751,
+      "tag": "0003_worthless_goblin_queen",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1744218497586,
+      "tag": "0004_previous_proemial_gods",
+      "breakpoints": true
+    }
+  ]
+}
