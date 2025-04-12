@@ -155,7 +155,7 @@ const Page = async () => {
           )}
 
           <div>
-            <div className="flex justify-between items-center mb-6">
+            <div className="mb-6 flex items-center justify-between">
               <h2 className="font-bebas-neue text-4xl text-light-100">
                 Book Requests
               </h2>
@@ -165,7 +165,7 @@ const Page = async () => {
             </div>
 
             {requestsSuccess && (
-              <div className="bg-dark-300 rounded-xl p-4">
+              <div className="rounded-xl bg-dark-300 p-4">
                 <BookRequestsList requests={bookRequests || []} />
               </div>
             )}
