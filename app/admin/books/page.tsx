@@ -16,10 +16,10 @@ import Pagination from "@/components/Pagination";
 import { getBooks } from "@/lib/admin/actions/book";
 
 const Page = async ({ searchParams }: PageProps) => {
-  // Fix: properly extract query parameters
-  const query = searchParams.query || "";
-  const sort = (searchParams.sort as string) || "available";
-  const page = Number(searchParams.page) || 1;
+  // Fix: properly await searchParams before using its properties
+  const query = (await searchParams).query || "";
+  const sort = ((await searchParams).sort as string) || "available";
+  const page = Number((await searchParams).page) || 1;
 
   const { data: allBooks, metadata } = await getBooks({
     query,

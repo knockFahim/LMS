@@ -131,12 +131,14 @@ const Page = () => {
                     </TableCell>
                     <TableCell>
                       <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${getStatusBadgeClass(
-                          request.status
+                        className={`rounded px-2 py-1 text-xs font-medium ${getStatusBadgeClass(
+                          request.status || "unknown"
                         )}`}
                       >
-                        {request.status.charAt(0) +
-                          request.status.slice(1).toLowerCase()}
+                        {request.status
+                          ? request.status.charAt(0) +
+                            request.status.slice(1).toLowerCase()
+                          : "Unknown"}
                       </span>
                     </TableCell>
                     <TableCell>

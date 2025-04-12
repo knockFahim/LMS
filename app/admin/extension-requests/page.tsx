@@ -24,6 +24,11 @@ import {
 
 // Status badge component
 const StatusBadge = ({ status }: { status: string }) => {
+  // Add null check for status to prevent TypeError
+  if (!status) {
+    return <Badge className="bg-gray-200 text-gray-600">Unknown</Badge>;
+  }
+
   let bgColor = "bg-[#FFF8E5]";
   let textColor = "text-[#B93815]";
 
@@ -78,14 +83,27 @@ const Page = () => {
   ) => {
     try {
       setProcessingId(requestId);
-      const result = await updateExtensionRequestStatus(requestId, status);
+      // Fix: Pass an object with requestId and status properties
+      const result = await updateExtensionRequestStatus({
+        requestId,
+        status,
+      });
 
       if (result.success) {
-        // Update local state to reflect the change
+        // Update local state to reflect the change - fixed to properly update the nested structure
         setRequests((prevRequests) =>
-          prevRequests.map((request) =>
-            request.id === requestId ? { ...request, status } : request
-          )
+          prevRequests.map((request) => {
+            if (request.extension.id === requestId) {
+              return {
+                ...request,
+                extension: {
+                  ...request.extension,
+                  status,
+                },
+              };
+            }
+            return request;
+          })
         );
       }
     } catch (error) {
@@ -117,19 +135,22 @@ const Page = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-10">
+                <TableCell colSpan={8} className="py-10 text-center">
                   Loading extension requests...
                 </TableCell>
               </TableRow>
             ) : requests.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-10">
+                <TableCell colSpan={8} className="py-10 text-center">
                   No extension requests found
                 </TableCell>
               </TableRow>
             ) : (
               requests.map((request) => (
-                <TableRow key={request.id} className="border-b-dark-100/5">
+                <TableRow
+                  key={request.extension.id}
+                  className="border-b-dark-100/5"
+                >
                   <TableCell>
                     <div className="flex flex-row items-center gap-2">
                       <Avatar name={request.user.fullname} size="sm" />
@@ -149,36 +170,40 @@ const Page = () => {
                   </TableCell>
 
                   <TableCell className="text-dark-200">
-                    {dayjs(request.currentDueDate).format("MMM DD, YYYY")}
+                    {dayjs(request.extension.currentDueDate).format(
+                      "MMM DD, YYYY"
+                    )}
                   </TableCell>
 
                   <TableCell className="text-dark-200">
-                    {dayjs(request.requestDate).format("MMM DD, YYYY")}
+                    {dayjs(request.extension.createdAt).format("MMM DD, YYYY")}
                   </TableCell>
 
                   <TableCell className="text-dark-200">
-                    {dayjs(request.newDueDate).format("MMM DD, YYYY")}
+                    {dayjs(request.extension.requestedDueDate).format(
+                      "MMM DD, YYYY"
+                    )}
                   </TableCell>
 
                   <TableCell className="max-w-xs truncate text-dark-200">
-                    {request.reason || "No reason provided"}
+                    {request.extension.reason || "No reason provided"}
                   </TableCell>
 
                   <TableCell>
-                    <StatusBadge status={request.status} />
+                    <StatusBadge status={request.extension.status} />
                   </TableCell>
 
                   <TableCell>
-                    {request.status === "PENDING" ? (
+                    {request.extension.status === "PENDING" ? (
                       <div className="flex gap-2">
                         <Button
                           variant="outline"
                           size="sm"
                           className="border-green-600 text-green-600 hover:bg-green-50"
                           onClick={() =>
-                            handleStatusUpdate(request.id, "APPROVED")
+                            handleStatusUpdate(request.extension.id, "APPROVED")
                           }
-                          disabled={processingId === request.id}
+                          disabled={processingId === request.extension.id}
                         >
                           Approve
                         </Button>
@@ -187,9 +212,9 @@ const Page = () => {
                           size="sm"
                           className="border-red-600 text-red-600 hover:bg-red-50"
                           onClick={() =>
-                            handleStatusUpdate(request.id, "REJECTED")
+                            handleStatusUpdate(request.extension.id, "REJECTED")
                           }
-                          disabled={processingId === request.id}
+                          disabled={processingId === request.extension.id}
                         >
                           Reject
                         </Button>

@@ -26,6 +26,10 @@ const StatusBadge = ({
 }: {
   status: "PENDING" | "APPROVED" | "REJECTED";
 }) => {
+  // Fix: Add null check for status
+  if (!status)
+    return <Badge className="bg-gray-200 text-gray-600">Unknown</Badge>;
+
   const style = statusStyles[status] || statusStyles.PENDING;
 
   return (
@@ -45,7 +49,17 @@ const ExtensionRequestsHistory = ({ userId }: { userId: string }) => {
         setLoading(true);
         const result = await getUserExtensionRequests(userId);
         if (result.success && result.data) {
-          setRequests(result.data);
+          // Fix: Map the data to ensure it has the correct structure
+          const formattedRequests = result.data.map((req) => ({
+            id: req.extension?.id || `req-${Math.random()}`,
+            book: req.book || { title: "Unknown Book" },
+            requestDate: req.extension?.createdAt,
+            newDueDate: req.extension?.requestedDueDate,
+            reason: req.extension?.reason,
+            status: req.extension?.status,
+          }));
+
+          setRequests(formattedRequests);
         }
       } catch (error) {
         console.error("Error fetching extension requests:", error);
@@ -80,16 +94,26 @@ const ExtensionRequestsHistory = ({ userId }: { userId: string }) => {
       </h3>
       <div className="space-y-3">
         {requests.map((request) => (
-          <div key={request.id} className="rounded-lg bg-dark-400 p-3">
+          <div
+            key={request.id || `req-${Math.random()}`}
+            className="rounded-lg bg-dark-400 p-3"
+          >
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium text-white">{request.book.title}</p>
+                <p className="font-medium text-white">
+                  {request.book?.title || "Unknown Book"}
+                </p>
                 <p className="text-sm text-light-100">
-                  Requested: {dayjs(request.requestDate).format("MMM DD, YYYY")}
+                  Requested:{" "}
+                  {request.requestDate
+                    ? dayjs(request.requestDate).format("MMM DD, YYYY")
+                    : "Unknown date"}
                 </p>
                 <p className="text-sm text-light-100">
                   New due date:{" "}
-                  {dayjs(request.newDueDate).format("MMM DD, YYYY")}
+                  {request.newDueDate
+                    ? dayjs(request.newDueDate).format("MMM DD, YYYY")
+                    : "Unknown date"}
                 </p>
                 {request.reason && (
                   <p className="mt-2 text-sm text-light-100">
