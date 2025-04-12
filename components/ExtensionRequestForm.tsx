@@ -22,6 +22,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,6 +36,7 @@ import { toast } from "@/hooks/use-toast";
 import { createExtensionRequest } from "@/lib/actions/extensionRequest";
 
 const extensionRequestSchema = z.object({
+  borrowRecordId: z.string().min(1, "Please select a book"),
   requestedDueDate: z
     .string()
     .min(1, "Please select a requested due date")
@@ -45,41 +53,57 @@ const extensionRequestSchema = z.object({
 type ExtensionRequestFormValues = z.infer<typeof extensionRequestSchema>;
 
 interface ExtensionRequestFormProps {
-  borrowRecordId: string;
   userId: string;
-  currentDueDate: string;
-  bookTitle: string;
+  borrowedBooks: BorrowedBook[];
   buttonVariant?: "default" | "outline";
 }
 
 export default function ExtensionRequestForm({
-  borrowRecordId,
   userId,
-  currentDueDate,
-  bookTitle,
+  borrowedBooks,
   buttonVariant = "default",
 }: ExtensionRequestFormProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedBook, setSelectedBook] = useState<BorrowedBook | null>(null);
+
+  // Filter only books that are currently borrowed (not returned)
+  const activeBorrowedBooks = borrowedBooks.filter(
+    (book) => book.borrow.status === "BORROWED"
+  );
 
   const form = useForm<ExtensionRequestFormValues>({
     resolver: zodResolver(extensionRequestSchema),
     defaultValues: {
+      borrowRecordId: "",
       requestedDueDate: "",
       reason: "",
     },
   });
 
-  const formattedCurrentDueDate = dayjs(currentDueDate).format("MMMM D, YYYY");
+  // Get current due date of selected book
+  const currentDueDate = selectedBook?.borrow?.dueDate || "";
+  const formattedCurrentDueDate = currentDueDate
+    ? dayjs(currentDueDate).format("MMMM D, YYYY")
+    : "";
+
   const minDate = dayjs().add(1, "day").format("YYYY-MM-DD");
   const maxDate = dayjs().add(30, "days").format("YYYY-MM-DD"); // Maximum extension of 30 days
+
+  // Handle book selection change
+  const handleBookChange = (borrowRecordId: string) => {
+    const book = activeBorrowedBooks.find(
+      (book) => book.borrow.id === borrowRecordId
+    );
+    setSelectedBook(book || null);
+  };
 
   const onSubmit = async (data: ExtensionRequestFormValues) => {
     try {
       setIsSubmitting(true);
 
       const result = await createExtensionRequest({
-        borrowRecordId,
+        borrowRecordId: data.borrowRecordId,
         userId,
         requestedDueDate: data.requestedDueDate,
         reason: data.reason,
@@ -108,15 +132,18 @@ export default function ExtensionRequestForm({
     }
   };
 
+  const noActiveBorrowedBooks = activeBorrowedBooks.length === 0;
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button
           variant={buttonVariant}
           size="sm"
+          disabled={noActiveBorrowedBooks}
           className={
             buttonVariant === "outline"
-              ? "text-primary border-primary hover:bg-primary hover:text-dark-100"
+              ? "border-primary text-primary hover:bg-primary hover:text-dark-100"
               : ""
           }
         >
@@ -130,85 +157,129 @@ export default function ExtensionRequestForm({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="mt-2 p-3 bg-dark-300/10 rounded-md">
-          <p className="text-sm text-dark-400">
-            <span className="font-medium">Book:</span> {bookTitle}
-          </p>
-          <p className="text-sm text-dark-400">
-            <span className="font-medium">Current Due Date:</span>{" "}
-            {formattedCurrentDueDate}
-          </p>
-          <p className="text-xs mt-2 text-amber-600">
-            Note: You can request a maximum of 2 deadline extensions per month.
-          </p>
-        </div>
+        {noActiveBorrowedBooks ? (
+          <div className="mt-2 rounded-md bg-amber-50 p-3">
+            <p className="text-sm text-amber-600">
+              You don't have any active borrowed books to extend.
+            </p>
+          </div>
+        ) : (
+          <Form {...form}>
+            <form
+              onSubmit={form.handleSubmit(onSubmit)}
+              className="space-y-4 pt-4"
+            >
+              <FormField
+                control={form.control}
+                name="borrowRecordId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Select Book</FormLabel>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        handleBookChange(value);
+                      }}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="book-form_input">
+                          <SelectValue placeholder="Select a book" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {activeBorrowedBooks.map((book) => (
+                          <SelectItem
+                            key={book.borrow.id}
+                            value={book.borrow.id}
+                          >
+                            {book.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-4 pt-4"
-          >
-            <FormField
-              control={form.control}
-              name="requestedDueDate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Requested Due Date</FormLabel>
-                  <FormControl>
-                    <Input
-                      className="book-form_input"
-                      type="date"
-                      min={minDate}
-                      max={maxDate}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    Select a new due date (maximum 30 days from today)
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
+              {selectedBook && (
+                <div className="rounded-md bg-dark-300/10 p-3">
+                  <p className="text-sm text-dark-400">
+                    <span className="font-medium">Current Due Date:</span>{" "}
+                    {formattedCurrentDueDate}
+                  </p>
+                  <p className="mt-2 text-xs text-amber-600">
+                    Note: You can request a maximum of 2 deadline extensions per
+                    month.
+                  </p>
+                </div>
               )}
-            />
 
-            <FormField
-              control={form.control}
-              name="reason"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Reason (Optional)</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      className="book-form_input min-h-[120px] resize-none"
-                      placeholder="Explain why you need more time to return the book"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="requestedDueDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Requested Due Date</FormLabel>
+                    <FormControl>
+                      <Input
+                        className="book-form_input"
+                        type="date"
+                        min={minDate}
+                        max={maxDate}
+                        disabled={!selectedBook}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Select a new due date (maximum 30 days from today)
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <div className="flex justify-end pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsOpen(false)}
-                className="mr-2"
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                className="bg-primary text-dark-100 hover:bg-primary/90"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "Submitting..." : "Submit Request"}
-              </Button>
-            </div>
-          </form>
-        </Form>
+              <FormField
+                control={form.control}
+                name="reason"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Reason (Optional)</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        className="book-form_input min-h-[120px] resize-none"
+                        placeholder="Explain why you need more time to return the book"
+                        disabled={!selectedBook}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex justify-end pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsOpen(false)}
+                  className="mr-2"
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  className="bg-primary text-dark-100 hover:bg-primary/90"
+                  disabled={isSubmitting || !selectedBook}
+                >
+                  {isSubmitting ? "Submitting..." : "Submit Request"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        )}
       </DialogContent>
     </Dialog>
   );

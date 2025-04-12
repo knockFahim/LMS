@@ -139,6 +139,7 @@ const Page = async () => {
                     <ExtensionRequestForm
                       userId={session.user.id}
                       borrowedBooks={borrowedBooks}
+                      buttonVariant="outline"
                     />
                   </div>
                   {/* Show extension request history */}
