@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 
@@ -8,15 +9,24 @@ import Avatar from "@/components/Avatar";
 import BookList from "@/components/BookList";
 import NotFound from "@/components/NotFound";
 import { Button } from "@/components/ui/button";
+import BookRequestsList from "@/components/BookRequestsList";
+import ExtensionRequestForm from "@/components/ExtensionRequestForm";
+import ExtensionRequestsHistory from "@/components/ExtensionRequestsHistory";
 
 import { db } from "@/database/drizzle";
 import { users } from "@/database/schema";
 
 import config from "@/lib/config";
 import { getBorrowedBooks } from "@/lib/actions/book";
+import { getUserBookRequests } from "@/lib/actions/bookRequest";
 
 interface BorrowedBookProps {
   data: BorrowedBook[];
+  success: boolean;
+}
+
+interface BookRequestsProps {
+  data: BookRequest[];
   success: boolean;
 }
 
@@ -32,9 +42,13 @@ const Page = async () => {
 
   if (!user) redirect("/404");
 
-  const { data: borrowedBooks, success } = (await getBorrowedBooks(
-    session?.user?.id
-  )) as BorrowedBookProps;
+  const [
+    { data: borrowedBooks, success },
+    { data: bookRequests, success: requestsSuccess },
+  ] = await Promise.all([
+    getBorrowedBooks(session?.user?.id) as Promise<BorrowedBookProps>,
+    getUserBookRequests(session?.user?.id) as Promise<BookRequestsProps>,
+  ]);
 
   return (
     <>
@@ -110,20 +124,51 @@ const Page = async () => {
           </form>
         </div>
 
-        <div className="flex-1">
-          {success &&
-            (borrowedBooks.length > 0 ? (
-              <BookList
-                title="Borrowed Books"
-                books={borrowedBooks}
-                isBorrowed={true}
-              />
-            ) : (
-              <NotFound
-                title="No Borrowed Books"
-                description="You haven't borrowed any books yet. Go to the library to borrow books."
-              />
-            ))}
+        <div className="flex-1 space-y-16">
+          {success && (
+            <div>
+              {borrowedBooks.length > 0 ? (
+                <>
+                  <BookList
+                    title="Borrowed Books"
+                    books={borrowedBooks}
+                    isBorrowed={true}
+                  />
+                  {/* Add ExtensionRequestForm with the userId */}
+                  <div className="mt-6">
+                    <ExtensionRequestForm
+                      userId={session.user.id}
+                      borrowedBooks={borrowedBooks}
+                    />
+                  </div>
+                  {/* Show extension request history */}
+                  <ExtensionRequestsHistory userId={session.user.id} />
+                </>
+              ) : (
+                <NotFound
+                  title="No Borrowed Books"
+                  description="You haven't borrowed any books yet. Go to the library to borrow books."
+                />
+              )}
+            </div>
+          )}
+
+          <div>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="font-bebas-neue text-4xl text-light-100">
+                Book Requests
+              </h2>
+              <Button asChild className="book-overview_btn">
+                <Link href="/book-request">+ Request New Book</Link>
+              </Button>
+            </div>
+
+            {requestsSuccess && (
+              <div className="bg-dark-300 rounded-xl p-4">
+                <BookRequestsList requests={bookRequests || []} />
+              </div>
+            )}
+          </div>
         </div>
       </section>
     </>

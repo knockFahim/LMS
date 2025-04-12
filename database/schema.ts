@@ -17,6 +17,16 @@ const BORROW_STATUS_ENUM = pgEnum("borrow_status", [
   "BORROWED",
   "RETURNED",
 ]);
+const REQUEST_STATUS_ENUM = pgEnum("request_status", [
+  "PENDING",
+  "APPROVED",
+  "REJECTED",
+]);
+const EXTENSION_STATUS_ENUM = pgEnum("extension_status", [
+  "PENDING",
+  "APPROVED",
+  "REJECTED",
+]);
 
 export const users = pgTable("users", {
   id: uuid("id").notNull().primaryKey().defaultRandom().unique(),
@@ -76,4 +86,43 @@ export const borrowRecords = pgTable("borrow_records", {
   returnDate: date("return_date"),
   status: BORROW_STATUS_ENUM("status").default("BORROWED").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
+export const bookRequests = pgTable("book_requests", {
+  id: uuid("id").notNull().primaryKey().defaultRandom().unique(),
+  userId: uuid("user_id")
+    .references(() => users.id)
+    .notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  author: varchar("author", { length: 255 }),
+  genre: varchar("genre", { length: 255 }),
+  description: text("description"),
+  status: REQUEST_STATUS_ENUM("status").default("PENDING").notNull(),
+  adminNote: text("admin_note"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+export const extensionRequests = pgTable("extension_requests", {
+  id: uuid("id").notNull().primaryKey().defaultRandom().unique(),
+  borrowRecordId: uuid("borrow_record_id")
+    .references(() => borrowRecords.id)
+    .notNull(),
+  userId: uuid("user_id")
+    .references(() => users.id)
+    .notNull(),
+  requestDate: timestamp("request_date", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  currentDueDate: date("current_due_date").notNull(),
+  requestedDueDate: date("requested_due_date").notNull(),
+  reason: text("reason"),
+  status: EXTENSION_STATUS_ENUM("status").default("PENDING").notNull(),
+  adminNote: text("admin_note"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });

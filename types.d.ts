@@ -49,6 +49,36 @@ interface BorrowedBook extends Book {
   user?: User;
 }
 
+interface BookRequest {
+  id: string;
+  userId: string;
+  title: string;
+  author: string | null;
+  genre: string | null;
+  description: string | null;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  adminNote: string | null;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+  user?: User;
+}
+
+interface ExtensionRequest {
+  id: string;
+  borrowRecordId: string;
+  userId: string;
+  requestDate: Date;
+  currentDueDate: Date;
+  requestedDueDate: Date;
+  reason: string | null;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  adminNote: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  borrowRecord?: BorrowRecord & { book?: Book };
+  user?: User;
+}
+
 interface BookParams {
   title: string;
   author: string;
@@ -60,6 +90,21 @@ interface BookParams {
   totalCopies: number;
   videoUrl: string;
   summary: string;
+}
+
+interface BookRequestParams {
+  title: string;
+  author?: string;
+  genre?: string;
+  description?: string;
+  userId: string;
+}
+
+interface ExtensionRequestParams {
+  borrowRecordId: string;
+  userId: string;
+  requestedDueDate: string;
+  reason?: string;
 }
 
 interface BorrowBookParams {

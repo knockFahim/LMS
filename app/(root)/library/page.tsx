@@ -1,7 +1,8 @@
+import Link from "next/link";
 import Search from "@/components/Search";
 import BookList from "@/components/BookList";
-
 import Pagination from "@/components/Pagination";
+import { Button } from "@/components/ui/button";
 import { searchBooks } from "@/lib/actions/book";
 
 const Page = async ({ searchParams }: PageProps) => {
@@ -29,6 +30,15 @@ const Page = async ({ searchParams }: PageProps) => {
 
         <Search />
       </section>
+
+      {allBooks?.length === 0 && query && (
+        <div className="mt-8 flex flex-col items-center justify-center text-center">
+          <p className="text-light-200 mb-4">Couldn't find the book you're looking for?</p>
+          <Button asChild className="book-overview_btn">
+            <Link href="/book-request">Request a Book</Link>
+          </Button>
+        </div>
+      )}
 
       <BookList
         title="All Library Books"
