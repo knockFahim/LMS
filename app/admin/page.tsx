@@ -7,6 +7,7 @@ import ErrorFallback from "@/components/admin/ErrorFallback";
 import RecentBooks from "@/components/admin/home/RecentBooks";
 import BorrowRequests from "@/components/admin/home/BorrowRequests";
 import AccountRequests from "@/components/admin/home/AccountRequests";
+import BookRequests from "@/components/admin/home/BookRequests";
 import SearchRedirect from "@/components/admin/SearchRedirect";
 
 const Page = async () => {
@@ -26,6 +27,12 @@ const Page = async () => {
           <ErrorBoundary FallbackComponent={ErrorFallback}>
             <Suspense fallback={<Loading />}>
               <BorrowRequests />
+            </Suspense>
+          </ErrorBoundary>
+
+          <ErrorBoundary FallbackComponent={ErrorFallback}>
+            <Suspense fallback={<Loading />}>
+              <BookRequests />
             </Suspense>
           </ErrorBoundary>
 

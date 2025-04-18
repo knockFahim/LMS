@@ -34,6 +34,16 @@ export const adminSideBarLinks = [
     text: "Borrow Records",
   },
   {
+    img: "/icons/admin/file-text.svg",
+    route: "/admin/book-requests",
+    text: "Book Requests",
+  },
+  {
+    img: "/icons/admin/calendar.svg",
+    route: "/admin/extension-requests",
+    text: "Extension Requests",
+  },
+  {
     img: "/icons/admin/user.svg",
     route: "/admin/account-requests",
     text: "Account Requests",
@@ -42,6 +52,54 @@ export const adminSideBarLinks = [
     img: "/icons/admin/announcement.svg",
     route: "/admin/announcements",
     text: "Announcements",
+  },
+];
+
+export const adminLinks = [
+  {
+    label: "Dashboard",
+    href: "/admin",
+    icon: "/icons/admin/home.svg",
+  },
+  {
+    label: "Account Requests",
+    href: "/admin/account-requests",
+    icon: "/icons/admin/user-square.svg",
+  },
+  {
+    label: "Users",
+    href: "/admin/users",
+    icon: "/icons/admin/users.svg",
+  },
+  {
+    label: "Books",
+    href: "/admin/books",
+    icon: "/icons/admin/books.svg",
+  },
+  {
+    label: "Borrow Records",
+    href: "/admin/borrow-records",
+    icon: "/icons/admin/bookmark.svg",
+  },
+  {
+    label: "Extension Requests",
+    href: "/admin/extension-requests",
+    icon: "/icons/admin/calendar.svg",
+  },
+  {
+    label: "Book Requests",
+    href: "/admin/book-requests",
+    icon: "/icons/admin/receipt.svg",
+  },
+  {
+    label: "Announcements",
+    href: "/admin/announcements",
+    icon: "/icons/admin/notification.svg",
+  },
+  {
+    label: "Test Search",
+    href: "/admin/test-search",
+    icon: "/icons/admin/search.svg",
   },
 ];
 

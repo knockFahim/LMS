@@ -17,10 +17,10 @@ import { getUsers } from "@/lib/admin/actions/user";
 import RoleMenu from "@/components/admin/RoleMenu";
 
 const Page = async ({ searchParams }: PageProps) => {
-  // Fix: properly extract query parameters
-  const query = searchParams.query || "";
-  const sort = (searchParams.sort as string) || "newest";
-  const page = Number(searchParams.page) || 1;
+  // Fix: properly await searchParams before using its properties
+  const query = (await searchParams).query || "";
+  const sort = ((await searchParams).sort as string) || "newest";
+  const page = Number((await searchParams).page) || 1;
 
   const { data: allRecords, metadata } = await getUsers({
     query,

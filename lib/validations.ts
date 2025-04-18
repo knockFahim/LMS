@@ -60,3 +60,29 @@ export const bookSchema = z.object({
     .trim()
     .min(10, { message: "Summary must be at least 10 characters." }),
 });
+
+export const bookRequestSchema = z.object({
+  title: z
+    .string()
+    .trim()
+    .min(2, { message: "Title must be at least 2 characters." })
+    .max(100, { message: "Title must be at most 100 characters." }),
+  author: z
+    .string()
+    .trim()
+    .transform((val) => (val === "" ? null : val))
+    .nullable()
+    .optional(),
+  genre: z
+    .string()
+    .trim()
+    .transform((val) => (val === "" ? null : val))
+    .nullable()
+    .optional(),
+  description: z
+    .string()
+    .trim()
+    .transform((val) => (val === "" ? null : val))
+    .nullable()
+    .optional(),
+});

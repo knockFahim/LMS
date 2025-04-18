@@ -1,14 +1,15 @@
+import Link from "next/link";
 import Search from "@/components/Search";
 import BookList from "@/components/BookList";
-
 import Pagination from "@/components/Pagination";
+import { Button } from "@/components/ui/button";
 import { searchBooks } from "@/lib/actions/book";
 
 const Page = async ({ searchParams }: PageProps) => {
-  // Fix: properly extract query parameters
-  const query = searchParams.query || "";
-  const sort = (searchParams.sort as string) || "available";
-  const page = Number(searchParams.page) || 1;
+  // Fix: properly await searchParams before using its properties
+  const query = (await searchParams).query || "";
+  const sort = ((await searchParams).sort as string) || "available";
+  const page = Number((await searchParams).page) || 1;
 
   const { data: allBooks, metadata } = await searchBooks({
     query,
@@ -29,6 +30,17 @@ const Page = async ({ searchParams }: PageProps) => {
 
         <Search />
       </section>
+
+      {allBooks?.length === 0 && query && (
+        <div className="mt-8 flex flex-col items-center justify-center text-center">
+          <p className="mb-4 text-light-200">
+            Couldn't find the book you're looking for?
+          </p>
+          <Button asChild className="book-overview_btn">
+            <Link href="/book-request">Request a Book</Link>
+          </Button>
+        </div>
+      )}
 
       <BookList
         title="All Library Books"
