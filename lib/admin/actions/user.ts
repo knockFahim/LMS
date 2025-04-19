@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { or, desc, asc, count, eq, ilike } from "drizzle-orm";
+import { or, desc, asc, count, eq, ilike, and } from "drizzle-orm";
 
 import { db } from "@/database/drizzle";
 import { borrowRecords, users } from "@/database/schema";
@@ -167,6 +167,56 @@ export async function updateUserRole(params: { userId: string; role: string }) {
     return {
       success: false,
       error: "An error occurred while updating user role",
+    };
+  }
+}
+
+export async function deleteUser(userId: string) {
+  try {
+    // First check if the user has any borrowed books
+    const borrowedBooks = await db
+      .select({ count: count() })
+      .from(borrowRecords)
+      .where(
+        and(
+          eq(borrowRecords.userId, userId),
+          eq(borrowRecords.status, "BORROWED")
+        )
+      );
+    
+    if (borrowedBooks[0].count > 0) {
+      return {
+        success: false,
+        error:
+          "Cannot delete user with borrowed books. Please ensure all books are returned first.",
+      };
+    }
+    
+    // Delete the user
+    const deletedUser = await db
+      .delete(users)
+      .where(eq(users.id, userId))
+      .returning();
+      
+    if (deletedUser.length === 0) {
+      return {
+        success: false,
+        error: "User not found",
+      };
+    }
+
+    // Revalidate the users page to update the UI
+    revalidatePath("/admin/users");
+    
+    return {
+      success: true,
+      message: "User deleted successfully",
+    };
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    return {
+      success: false,
+      error: "An error occurred while deleting the user",
     };
   }
 }

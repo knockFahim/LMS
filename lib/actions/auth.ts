@@ -41,13 +41,30 @@ export async function signUp(params: AuthCredentails) {
       universityCard,
     });
 
-    await workflowClient.trigger({
-      url: `${config.env.prodApiEndpoint}/api/workflow/onboarding`,
-      body: {
-        email,
-        fullname,
-      },
-    });
+    // Skip workflow trigger in local development environments to avoid the localhost error
+    // In production environments, this should work properly with a public URL
+    try {
+      const isLocalhost =
+        config.env.prodApiEndpoint?.includes("localhost") ||
+        config.env.prodApiEndpoint?.includes("127.0.0.1");
+
+      if (!isLocalhost) {
+        await workflowClient.trigger({
+          url: `${config.env.prodApiEndpoint}/api/workflow/onboarding`,
+          body: {
+            email,
+            fullname,
+          },
+        });
+      } else {
+        console.log(
+          "Skipping workflow trigger in local development environment"
+        );
+      }
+    } catch (workflowError) {
+      console.error("Workflow trigger error:", workflowError);
+      // Non-critical error, continue with the signup process
+    }
 
     // sign in on behalf of the new user
     await signInWithCredentials({ email, password });

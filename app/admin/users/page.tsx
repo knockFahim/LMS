@@ -15,6 +15,7 @@ import config from "@/lib/config";
 import Pagination from "@/components/Pagination";
 import { getUsers } from "@/lib/admin/actions/user";
 import RoleMenu from "@/components/admin/RoleMenu";
+import DeleteUserButton from "@/components/admin/dialogs/DeleteUserButton";
 
 const Page = async ({ searchParams }: PageProps) => {
   // Fix: properly await searchParams before using its properties
@@ -82,7 +83,7 @@ const Page = async ({ searchParams }: PageProps) => {
                         width={14}
                         height={14}
                         className="object-contain"
-                        alt="delete"
+                        alt="link"
                       />
                     </div>
                   </TableCell>
@@ -90,12 +91,9 @@ const Page = async ({ searchParams }: PageProps) => {
                     {totalBorrowedBooks}
                   </TableCell>
                   <TableCell className="flex justify-center">
-                    <Image
-                      src="/icons/admin/trash.svg"
-                      width={20}
-                      height={20}
-                      className="object-contain"
-                      alt="delete"
+                    <DeleteUserButton
+                      userId={user.id}
+                      userName={user.fullname}
                     />
                   </TableCell>
                 </TableRow>
