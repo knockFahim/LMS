@@ -212,10 +212,12 @@ export async function editBook(params: UpdateBookParams) {
       };
     }
 
-    // calculate availableCopies
-    const availableCopies =
-      params.totalCopies -
-      (params.totalCopies - existingBook[0].availableCopies);
+    // Calculate how many copies are currently borrowed
+    const borrowedCopies =
+      existingBook[0].totalCopies - existingBook[0].availableCopies;
+
+    // Calculate new availableCopies based on the new totalCopies and current borrowed copies
+    const availableCopies = Math.max(0, params.totalCopies - borrowedCopies);
 
     const updatedBook = await db
       .update(books)
@@ -225,6 +227,8 @@ export async function editBook(params: UpdateBookParams) {
       })
       .where(eq(books.id, params.bookId))
       .returning();
+
+    revalidatePath("/admin/books");
 
     return {
       success: true,
