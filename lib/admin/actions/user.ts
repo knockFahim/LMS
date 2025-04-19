@@ -183,7 +183,7 @@ export async function deleteUser(userId: string) {
           eq(borrowRecords.status, "BORROWED")
         )
       );
-    
+
     if (borrowedBooks[0].count > 0) {
       return {
         success: false,
@@ -191,13 +191,13 @@ export async function deleteUser(userId: string) {
           "Cannot delete user with borrowed books. Please ensure all books are returned first.",
       };
     }
-    
+
     // Delete the user
     const deletedUser = await db
       .delete(users)
       .where(eq(users.id, userId))
       .returning();
-      
+
     if (deletedUser.length === 0) {
       return {
         success: false,
@@ -207,7 +207,7 @@ export async function deleteUser(userId: string) {
 
     // Revalidate the users page to update the UI
     revalidatePath("/admin/users");
-    
+
     return {
       success: true,
       message: "User deleted successfully",

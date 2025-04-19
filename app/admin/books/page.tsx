@@ -12,6 +12,7 @@ import {
 import BookCover from "@/components/BookCover";
 import { Button } from "@/components/ui/button";
 import Pagination from "@/components/Pagination";
+import DeleteBookButton from "@/components/admin/dialogs/DeleteBookButton";
 
 import { getBooks } from "@/lib/admin/actions/book";
 
@@ -70,7 +71,13 @@ const Page = async ({ searchParams }: PageProps) => {
                     {book.genre}
                   </TableCell>
                   <TableCell className="text-sm font-medium text-dark-200">
-                    Dec 19 2023
+                    {book.createdAt
+                      ? new Date(book.createdAt).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })
+                      : "N/A"}
                   </TableCell>
                   <TableCell>
                     <Button asChild className="view-btn !shadow">
@@ -90,12 +97,9 @@ const Page = async ({ searchParams }: PageProps) => {
                           alt="edit"
                         />
                       </Link>
-                      <Image
-                        src="/icons/admin/trash.svg"
-                        width={20}
-                        height={20}
-                        className="object-contain"
-                        alt="delete"
+                      <DeleteBookButton
+                        bookId={book.id}
+                        bookTitle={book.title}
                       />
                     </div>
                   </TableCell>

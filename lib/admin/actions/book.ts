@@ -404,3 +404,57 @@ export async function debugSearch(query: string) {
     };
   }
 }
+
+/**
+ * Deletes a book from the database
+ * Ensures the book is not currently borrowed before deletion
+ */
+export async function deleteBook(bookId: string) {
+  try {
+    // Check if any copies of the book are currently borrowed
+    const borrowedCopies = await db
+      .select({ count: count() })
+      .from(borrowRecords)
+      .where(
+        and(
+          eq(borrowRecords.bookId, bookId),
+          eq(borrowRecords.status, "BORROWED")
+        )
+      );
+
+    if (borrowedCopies[0].count > 0) {
+      return {
+        success: false,
+        error:
+          "Cannot delete a book that is currently borrowed. Please wait until all copies are returned.",
+      };
+    }
+
+    // Delete the book
+    const deletedBook = await db
+      .delete(books)
+      .where(eq(books.id, bookId))
+      .returning();
+
+    if (deletedBook.length === 0) {
+      return {
+        success: false,
+        error: "Book not found",
+      };
+    }
+
+    // Revalidate the books page to update the UI
+    revalidatePath("/admin/books");
+
+    return {
+      success: true,
+      message: "Book deleted successfully",
+    };
+  } catch (error) {
+    console.error("Error deleting book:", error);
+    return {
+      success: false,
+      error: "An error occurred while deleting the book",
+    };
+  }
+}
