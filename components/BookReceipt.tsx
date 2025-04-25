@@ -54,7 +54,7 @@ const BookReceipt = (props: Props) => {
       pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
 
       // Save the PDF
-      pdf.save("BookWise_Ticket.pdf");
+      pdf.save("LMS_Ticket.pdf");
 
       // Re-hide the section
       ticket.style.display = "none";
@@ -115,7 +115,7 @@ const BookReceipt = (props: Props) => {
             height={32}
             className="object-contain"
           />
-          <p className="text-2xl font-semibold text-white">BookWise</p>
+          <p className="text-2xl font-semibold text-white">LMS</p>
         </div>
 
         <div className="mt-9 px-8">
@@ -193,10 +193,10 @@ const BookReceipt = (props: Props) => {
         <div className="px-8 text-center text-light-700">
           <p>
             Thank you for using{" "}
-            <span className="font-semibold text-light-200">BookWise</span>. For
-            any questions or concerns, please contact us at{" "}
+            <span className="font-semibold text-light-200">LMS</span>. For any
+            questions or concerns, please contact us at{" "}
             <span className="font-semibold text-light-200">
-              support@bookwise.com
+              support@LMS.com
             </span>
           </p>
         </div>

@@ -44,7 +44,7 @@ const bebasNeue = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "BookWise",
+  title: "LMS",
   description: "A book library app",
 };
 

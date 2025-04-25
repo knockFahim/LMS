@@ -22,7 +22,7 @@ const Sidebar = ({ session }: { session: Session }) => {
             width={37}
             alt="site-logo"
           />
-          <h1>BookWise</h1>
+          <h1>LMS</h1>
         </div>
 
         <div className="mt-10 flex flex-col gap-5">
