@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import BookCover from "@/components/BookCover";
 import BookVideo from "@/components/BookVideo";
+import BookReviews from "@/components/BookReviews";
 import { Button } from "@/components/ui/button";
 import { getBook } from "@/lib/admin/actions/book";
 
@@ -24,9 +25,9 @@ const Page = async ({ params }: PageProps) => {
       </Button>
 
       <div className="w-full">
-        <section className="flex lg:flex-row flex-col gap-12">
+        <section className="flex flex-col gap-12 lg:flex-row">
           <div
-            className="py-10 px-20 lg:w-fit w-full rounded-md flex justify-center items-center"
+            className="flex w-full items-center justify-center rounded-md px-20 py-10 lg:w-fit"
             style={{
               background: `${book.coverColor}4d`,
             }}
@@ -38,7 +39,7 @@ const Page = async ({ params }: PageProps) => {
             />
           </div>
 
-          <div className="flex-1 flex flex-col">
+          <div className="flex flex-1 flex-col">
             <div className="flex flex-row items-center gap-2">
               <p className="text-lg text-light-500">Created At:</p>
               <Image
@@ -47,23 +48,23 @@ const Page = async ({ params }: PageProps) => {
                 height={20}
                 alt="calendar"
               />
-              <p className="text-dark-200 text-base">
+              <p className="text-base text-dark-200">
                 {dayjs(book.createdAt).format("DD/MM/YYYY")}
               </p>
             </div>
 
-            <h2 className="mt-5 font-semibold text-2xl text-dark-400">
+            <h2 className="mt-5 text-2xl font-semibold text-dark-400">
               {book.title}
             </h2>
-            <p className="text-dark-200 text-lg font-semibold mt-2.5">
+            <p className="mt-2.5 text-lg font-semibold text-dark-200">
               By {book.author}
             </p>
-            <p className="text-base text-light-500 mt-2">{book.genre}</p>
+            <p className="mt-2 text-base text-light-500">{book.genre}</p>
 
-            <p className="text-dark-700 text-base mt-5">{book.description}</p>
+            <p className="mt-5 text-base text-dark-700">{book.description}</p>
 
             <Button
-              className="font-bold text-sm min-h-12 mt-5 bg-primary-admin hover:bg-primary-admin/70"
+              className="mt-5 min-h-12 bg-primary-admin text-sm font-bold hover:bg-primary-admin/70"
               asChild
             >
               <Link href={`/admin/books/${id}/edit`}>
@@ -80,10 +81,10 @@ const Page = async ({ params }: PageProps) => {
           </div>
         </section>
 
-        <div className="flex lg:flex-row flex-col gap-12 mt-10">
+        <div className="mt-10 flex flex-col gap-12 lg:flex-row">
           <section className="flex-1">
-            <h3 className="text-dark-400 font-semibold text-xl">Summary</h3>
-            <div className="space-y-5 mt-5 text-slate-500">
+            <h3 className="text-xl font-semibold text-dark-400">Summary</h3>
+            <div className="mt-5 space-y-5 text-slate-500">
               {book.summary
                 ?.split("\n")
                 .map((line, index) => <p key={index}>{line}</p>)}
@@ -91,10 +92,18 @@ const Page = async ({ params }: PageProps) => {
           </section>
 
           <section className="flex-1">
-            <h3 className="text-dark-400 font-semibold text-xl mb-5">Video</h3>
+            <h3 className="mb-5 text-xl font-semibold text-dark-400">Video</h3>
             <BookVideo videoUrl={book.videoUrl} />
           </section>
         </div>
+
+        {/* Reviews Section */}
+        <section className="mt-10">
+          <h3 className="mb-5 text-xl font-semibold text-dark-400">
+            User Reviews
+          </h3>
+          <BookReviews bookId={id} />
+        </section>
       </div>
     </>
   );

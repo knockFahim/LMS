@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import BookList from "@/components/BookList";
 import BookVideo from "@/components/BookVideo";
 import BookOverview from "@/components/BookOverview";
+import ReviewForm from "@/components/ReviewForm";
+import BookReviews from "@/components/BookReviews";
 
 import { auth } from "@/auth";
 import { db } from "@/database/drizzle";
@@ -38,6 +40,17 @@ const Page = async ({ params }: PageProps) => {
                 ?.split("\n")
                 .map((line, index) => <p key={index}>{line}</p>)}
             </div>
+          </section>
+
+          {/* Reviews Section */}
+          <section className="mt-10 flex flex-col gap-7">
+            <h3>Reviews</h3>
+            {session?.user && (
+              <div className="mb-8">
+                <ReviewForm bookId={id} userId={session.user.id as string} />
+              </div>
+            )}
+            <BookReviews bookId={id} />
           </section>
         </div>
 

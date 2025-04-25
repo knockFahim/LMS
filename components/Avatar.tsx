@@ -1,35 +1,45 @@
-import { cn, getInitials } from "@/lib/utils";
+import React from "react";
 
-interface Props {
+interface AvatarProps {
   name: string;
-  size?: "xs" | "sm" | "md" | "lg";
-  bgColor?: string;
-  textColor?: string;
+  size?: "sm" | "md" | "lg";
 }
 
-const sizeClasses = {
-  xs: "size-5 text-[8px]",
-  sm: "size-8 text-xs",
-  md: "size-10 text-sm",
-  lg: "size-20 text-3xl",
-};
+function stringToColor(string: string) {
+  let hash = 0;
+  for (let i = 0; i < string.length; i++) {
+    hash = string.charCodeAt(i) + ((hash << 5) - hash);
+  }
 
-const Avatar = ({
-  name,
-  size = "md",
-  bgColor = "bg-blue-500",
-  textColor = "text-white",
-}: Props) => {
-  const initials = getInitials(name);
+  let color = "#";
+  for (let i = 0; i < 3; i++) {
+    const value = (hash >> (i * 8)) & 0xff;
+    color += ("00" + value.toString(16)).substr(-2);
+  }
+
+  return color;
+}
+
+const Avatar = ({ name, size = "md" }: AvatarProps) => {
+  const initials = name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .substring(0, 2);
+
+  const color = stringToColor(name);
+
+  const sizeClasses = {
+    sm: "w-8 h-8 text-xs",
+    md: "w-10 h-10 text-sm",
+    lg: "w-12 h-12 text-base",
+  };
 
   return (
     <div
-      className={cn(
-        sizeClasses[size],
-        bgColor,
-        textColor,
-        "rounded-full flex items-center justify-center font-semibold"
-      )}
+      className={`${sizeClasses[size]} flex items-center justify-center rounded-full font-medium text-white`}
+      style={{ backgroundColor: color }}
     >
       {initials}
     </div>

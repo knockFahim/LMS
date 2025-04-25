@@ -43,6 +43,13 @@
       "when": 1744451655572,
       "tag": "0005_shocking_owl",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1745600237859,
+      "tag": "0006_young_korath",
+      "breakpoints": true
     }
   ]
 }
