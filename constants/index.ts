@@ -3,7 +3,10 @@ export const navigationLinks = [
     href: "/library",
     label: "Library",
   },
-
+  {
+    href: "/ask-librarian",
+    label: "Ask Librarian",
+  },
   {
     img: "/icons/user.svg",
     selectedImg: "/icons/user-fill.svg",
@@ -53,6 +56,11 @@ export const adminSideBarLinks = [
     route: "/admin/announcements",
     text: "Announcements",
   },
+  {
+    img: "/icons/admin/message-square.svg",
+    route: "/admin/library-messages",
+    text: "Library Messages",
+  },
 ];
 
 export const adminLinks = [
@@ -95,6 +103,11 @@ export const adminLinks = [
     label: "Announcements",
     href: "/admin/announcements",
     icon: "/icons/admin/notification.svg",
+  },
+  {
+    label: "Library Messages",
+    href: "/admin/library-messages",
+    icon: "/icons/admin/message-square.svg",
   },
   {
     label: "Test Search",

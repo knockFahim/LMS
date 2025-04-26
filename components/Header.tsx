@@ -29,7 +29,21 @@ const Header = ({ session }: { session: Session }) => {
             library
           </Link>
         </li>
-        
+
+        <li>
+          <Link
+            href="/ask-librarian"
+            className={cn(
+              "text-base cursor-pointer capitalize",
+              pathname === "/ask-librarian"
+                ? "text-light-200"
+                : "text-light-100"
+            )}
+          >
+            ask librarian
+          </Link>
+        </li>
+
         <li>
           <Link
             href="/book-request"

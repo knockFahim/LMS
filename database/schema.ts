@@ -27,6 +27,11 @@ const EXTENSION_STATUS_ENUM = pgEnum("extension_status", [
   "APPROVED",
   "REJECTED",
 ]);
+const MESSAGE_STATUS_ENUM = pgEnum("message_status", [
+  "UNREAD",
+  "READ",
+  "REPLIED",
+]);
 
 export const users = pgTable("users", {
   id: uuid("id").notNull().primaryKey().defaultRandom().unique(),
@@ -138,6 +143,24 @@ export const reviews = pgTable("reviews", {
     .notNull(),
   rating: integer("rating").notNull(),
   comment: text("comment"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export const libraryMessages = pgTable("library_messages", {
+  id: uuid("id").notNull().primaryKey().defaultRandom().unique(),
+  userId: uuid("user_id")
+    .references(() => users.id)
+    .notNull(),
+  subject: varchar("subject", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  status: MESSAGE_STATUS_ENUM("status").default("UNREAD").notNull(),
+  adminResponse: text("admin_response"),
+  adminId: uuid("admin_id").references(() => users.id),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
