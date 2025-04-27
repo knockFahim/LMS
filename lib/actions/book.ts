@@ -281,6 +281,12 @@ export async function borrowBook(params: BorrowBookParams) {
 
 export async function getBorrowedBooks(userId: string) {
   try {
+    // Import the function to update overdue books
+    const { updateOverdueBooks } = await import("@/lib/admin/actions/book");
+
+    // Update overdue books status before fetching
+    await updateOverdueBooks();
+
     const borrowedBooks = await db
       .select({
         ...getTableColumns(books),

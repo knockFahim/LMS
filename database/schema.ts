@@ -32,6 +32,13 @@ const MESSAGE_STATUS_ENUM = pgEnum("message_status", [
   "READ",
   "REPLIED",
 ]);
+const HOLD_STATUS_ENUM = pgEnum("hold_status", [
+  "WAITING", // Waiting for book to be returned
+  "READY", // Book is available for pickup
+  "FULFILLED", // Hold was fulfilled (book was borrowed by requestor)
+  "CANCELLED", // Hold was cancelled by user or admin
+  "EXPIRED", // Hold expired (user didn't pick up the book in time)
+]);
 
 export const users = pgTable("users", {
   id: uuid("id").notNull().primaryKey().defaultRandom().unique(),
@@ -161,6 +168,30 @@ export const libraryMessages = pgTable("library_messages", {
   status: MESSAGE_STATUS_ENUM("status").default("UNREAD").notNull(),
   adminResponse: text("admin_response"),
   adminId: uuid("admin_id").references(() => users.id),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+// Book holds table for tracking hold requests
+export const bookHolds = pgTable("book_holds", {
+  id: uuid("id").notNull().primaryKey().defaultRandom().unique(),
+  userId: uuid("user_id")
+    .references(() => users.id)
+    .notNull(),
+  bookId: uuid("book_id")
+    .references(() => books.id)
+    .notNull(),
+  requestDate: timestamp("request_date", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  notificationDate: timestamp("notification_date", { withTimezone: true }),
+  status: HOLD_STATUS_ENUM("status").default("WAITING").notNull(),
+  expiryDate: timestamp("expiry_date", { withTimezone: true }),
+  notes: text("notes"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),

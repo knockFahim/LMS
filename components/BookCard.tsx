@@ -13,8 +13,8 @@ export const NormalBook = ({
   coverUrl,
 }: Book) => {
   return (
-    <li className="xs:w-52 w-full">
-      <Link href={`/books/${id}`} className="w-full flex flex-col items-center">
+    <li className="w-full xs:w-52">
+      <Link href={`/books/${id}`} className="flex w-full flex-col items-center">
         <BookCover coverColor={coverColor} coverUrl={coverUrl} />
 
         <div className="mt-4 w-full xs:w-44">
@@ -33,7 +33,8 @@ export const BorrowedBook = (props: BorrowedBook) => {
   const daysLeft = dayjs(dueDate).diff(dayjs(), "day");
 
   const isReturned = status === "RETURNED";
-  const isOverDue = daysLeft < 0 && status === "BORROWED";
+  const isOverDue =
+    (daysLeft < 0 && status === "BORROWED") || status === "OVERDUE";
 
   return (
     <li className="borrowed-book">
@@ -47,7 +48,7 @@ export const BorrowedBook = (props: BorrowedBook) => {
         />
       )}
 
-      <Link href={`/books/${id}`} className="w-full flex flex-col items-center">
+      <Link href={`/books/${id}`} className="flex w-full flex-col items-center">
         <div
           className="borrowed-book_cover"
           style={{
@@ -66,7 +67,7 @@ export const BorrowedBook = (props: BorrowedBook) => {
           <p className="book-genre">{genre}</p>
 
           <div className="mt-5 space-y-1.5">
-            <div className="flex flex-row gap-1 items-center">
+            <div className="flex flex-row items-center gap-1">
               <Image
                 src="/icons/book-2.svg"
                 alt="calendar"
@@ -78,8 +79,8 @@ export const BorrowedBook = (props: BorrowedBook) => {
               </p>
             </div>
 
-            <div className="flex justify-between items-center gap-2">
-              <div className="flex-1 flex flex-row gap-1 items-center">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-1 flex-row items-center gap-1">
                 <Image
                   src={
                     isReturned
@@ -96,8 +97,11 @@ export const BorrowedBook = (props: BorrowedBook) => {
                   {isReturned
                     ? "Returned on " + dayjs(returnDate).format("MMM DD")
                     : isOverDue
-                      ? "Overdue by " + Math.abs(daysLeft) + " days"
-                      : `${daysLeft} days left to due`}
+                      ? "Overdue by " +
+                        Math.abs(daysLeft) +
+                        " " +
+                        (Math.abs(daysLeft) === 1 ? "day" : "days")
+                      : `${daysLeft} ${daysLeft === 1 ? "day" : "days"} left to due`}
                 </p>
               </div>
 

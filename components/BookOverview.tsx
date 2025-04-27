@@ -1,11 +1,13 @@
 import Image from "next/image";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 import BookCover from "./BookCover";
 import BorrowBook from "./BorrowBook";
+import PlaceHold from "./PlaceHold";
+import { Button } from "./ui/button";
 
 import { db } from "@/database/drizzle";
-import { users } from "@/database/schema";
+import { users, borrowRecords } from "@/database/schema";
 
 interface Props extends Book {
   userId: string;
@@ -30,6 +32,21 @@ const BookOverview = async ({
     .where(eq(users.id, userId))
     .limit(1);
   if (!user) return null;
+
+  // Check if the user is already borrowing this book
+  const userBorrowingRecord = await db
+    .select()
+    .from(borrowRecords)
+    .where(
+      and(
+        eq(borrowRecords.userId, userId),
+        eq(borrowRecords.bookId, id),
+        eq(borrowRecords.status, "BORROWED")
+      )
+    )
+    .limit(1);
+
+  const isAlreadyBorrowing = userBorrowingRecord.length > 0;
 
   const borrowingEligibility = {
     isEligible: availableCopies > 0 && user.status === "APPROVED",
@@ -71,11 +88,28 @@ const BookOverview = async ({
 
         <p className="book-description">{description}</p>
 
-        <BorrowBook
-          bookId={id}
-          userId={userId}
-          borrowingEligibility={borrowingEligibility}
-        />
+        {isAlreadyBorrowing ? (
+          <div className="mt-4">
+            <Button className="book-overview_btn" disabled={true}>
+              <Image src="/icons/book.svg" alt="book" width={20} height={20} />
+              <p className="font-bebas-neue text-xl text-dark-100">
+                Already Borrowed
+              </p>
+            </Button>
+          </div>
+        ) : availableCopies > 0 ? (
+          <BorrowBook
+            bookId={id}
+            userId={userId}
+            borrowingEligibility={borrowingEligibility}
+          />
+        ) : user.status === "APPROVED" ? (
+          <PlaceHold bookId={id} userId={userId} bookTitle={title} />
+        ) : (
+          <p className="mt-4 font-medium text-red-500">
+            Your account must be approved to place holds on books
+          </p>
+        )}
       </div>
 
       <div className="relative flex flex-1 justify-center">

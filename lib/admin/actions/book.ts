@@ -9,6 +9,7 @@ import {
   ilike,
   and,
   getTableColumns,
+  sql,
 } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
@@ -118,6 +119,9 @@ export async function getBorrowRecords({
   additionalCondition,
 }: QueryParams & { additionalCondition?: any }) {
   try {
+    // First check for any overdue books and update their status
+    await updateOverdueBooks();
+
     const offset = (page - 1) * limit;
 
     const searchConditions = query
@@ -293,7 +297,7 @@ export async function updateBorrowStatus({
       };
     }
 
-    // If changing to RETURNED, we need to update the book's available copies
+    // If changing to RETURNED, we need to update the book's available copies and process any holds
     if (
       normalizedStatus === "RETURNED" &&
       currentRecord[0].status !== "RETURNED"
@@ -323,6 +327,17 @@ export async function updateBorrowStatus({
           returnDate: new Date().toISOString().split("T")[0], // Current date in YYYY-MM-DD format
         })
         .where(eq(borrowRecords.id, borrowId));
+
+      // Process any holds for this book
+      try {
+        const { processHoldsForReturnedBook } = await import(
+          "@/lib/actions/holds"
+        );
+        await processHoldsForReturnedBook(currentRecord[0].bookId);
+      } catch (holdsError) {
+        console.error("Error processing holds for returned book:", holdsError);
+        // Continue with success even if processing holds fails
+      }
     } else {
       // Just update the status
       await db
@@ -455,6 +470,66 @@ export async function deleteBook(bookId: string) {
     return {
       success: false,
       error: "An error occurred while deleting the book",
+    };
+  }
+}
+
+/**
+ * Checks and updates the status of books that are overdue
+ * This should be called periodically to ensure statuses are up to date
+ */
+export async function updateOverdueBooks() {
+  try {
+    const today = new Date().toISOString().split("T")[0]; // Format: YYYY-MM-DD
+
+    // Find all borrowed books with due dates before today
+    const overdueBorrowRecords = await db
+      .select()
+      .from(borrowRecords)
+      .where(
+        and(
+          eq(borrowRecords.status, "BORROWED"),
+          // This condition checks if due_date is before today
+          sql`${borrowRecords.dueDate} < ${today}`
+        )
+      );
+
+    if (overdueBorrowRecords.length === 0) {
+      return {
+        success: true,
+        message: "No overdue books found",
+        updatedCount: 0,
+      };
+    }
+
+    // Update all found records to OVERDUE status
+    const result = await db
+      .update(borrowRecords)
+      .set({
+        status: "OVERDUE",
+      })
+      .where(
+        and(
+          eq(borrowRecords.status, "BORROWED"),
+          // This condition checks if due_date is before today
+          sql`${borrowRecords.dueDate} < ${today}`
+        )
+      );
+
+    // Revalidate relevant pages
+    revalidatePath("/admin/borrow-records");
+    revalidatePath("/my-profile");
+
+    return {
+      success: true,
+      message: `Updated ${overdueBorrowRecords.length} books to OVERDUE status`,
+      updatedCount: overdueBorrowRecords.length,
+    };
+  } catch (error) {
+    console.error("Error updating overdue books:", error);
+    return {
+      success: false,
+      error: "An error occurred while updating overdue books",
     };
   }
 }

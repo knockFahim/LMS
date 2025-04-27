@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import BookRequestsList from "@/components/BookRequestsList";
 import ExtensionRequestForm from "@/components/ExtensionRequestForm";
 import ExtensionRequestsHistory from "@/components/ExtensionRequestsHistory";
+import UserHolds from "@/components/UserHolds";
 
 import { db } from "@/database/drizzle";
 import { users } from "@/database/schema";
@@ -19,6 +20,7 @@ import { users } from "@/database/schema";
 import config from "@/lib/config";
 import { getBorrowedBooks } from "@/lib/actions/book";
 import { getUserBookRequests } from "@/lib/actions/bookRequest";
+import { getUserHolds } from "@/lib/actions/holds";
 
 interface BorrowedBookProps {
   data: BorrowedBook[];
@@ -27,6 +29,11 @@ interface BorrowedBookProps {
 
 interface BookRequestsProps {
   data: BookRequest[];
+  success: boolean;
+}
+
+interface UserHoldsProps {
+  data: any[];
   success: boolean;
 }
 
@@ -42,13 +49,22 @@ const Page = async () => {
 
   if (!user) redirect("/404");
 
+  // Handle the case where the holds API might fail
   const [
     { data: borrowedBooks, success },
     { data: bookRequests, success: requestsSuccess },
+    holdsResult,
   ] = await Promise.all([
     getBorrowedBooks(session?.user?.id) as Promise<BorrowedBookProps>,
     getUserBookRequests(session?.user?.id) as Promise<BookRequestsProps>,
+    getUserHolds(session?.user?.id).catch((error) => {
+      console.error("Error fetching user holds:", error);
+      return { success: false, data: [], error: "Could not load holds" };
+    }) as Promise<UserHoldsProps>,
   ]);
+
+  const { data: userHolds = [], success: holdsSuccess = false } =
+    holdsResult || {};
 
   return (
     <>
@@ -151,6 +167,18 @@ const Page = async () => {
                   description="You haven't borrowed any books yet. Go to the library to borrow books."
                 />
               )}
+            </div>
+          )}
+
+          {/* Add Holds section - only show if holds feature is working */}
+          {holdsSuccess && (
+            <div>
+              <h2 className="mb-4 font-bebas-neue text-4xl text-light-100">
+                Book Holds
+              </h2>
+              <div className="rounded-xl bg-dark-300 p-4">
+                <UserHolds holds={userHolds || []} />
+              </div>
             </div>
           )}
 
