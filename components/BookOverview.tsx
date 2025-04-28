@@ -57,7 +57,8 @@ const BookOverview = async ({
   if (availableCopies <= 0) {
     eligibilityMessage = "Book is not available";
   } else if (user.status !== "APPROVED") {
-    eligibilityMessage = "You are not allowed to borrow this book until your account is approved";
+    eligibilityMessage =
+      "You are not allowed to borrow this book until your account is approved";
   } else if (!eligibilityResult.isEligible) {
     eligibilityMessage = eligibilityResult.message;
   } else {
@@ -122,7 +123,12 @@ const BookOverview = async ({
             borrowingEligibility={borrowingEligibility}
           />
         ) : user.status === "APPROVED" ? (
-          <PlaceHold bookId={id} userId={userId} bookTitle={title} />
+          <PlaceHold 
+            bookId={id} 
+            userId={userId} 
+            bookTitle={title} 
+            borrowingEligibility={borrowingEligibility}
+          />
         ) : (
           <p className="mt-4 font-medium text-red-500">
             Your account must be approved to place holds on books

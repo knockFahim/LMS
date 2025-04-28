@@ -74,6 +74,10 @@ const Page = async () => {
   const isEligibleToBorrow = eligibilityResult.isEligible;
   const borrowingMessage = eligibilityResult.message;
 
+  // Check if user's account is actually blocked or has overdue items
+  const isBorrowingRestricted =
+    user.status === "BLOCKED" || !isEligibleToBorrow;
+
   return (
     <>
       {/* Client component that updates borrowing status without affecting render */}
@@ -139,14 +143,20 @@ const Page = async () => {
 
             {/* Show borrowing status indicator */}
             <div
-              className={`mt-4 rounded-md p-3 ${isEligibleToBorrow ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}
+              className={`mt-4 rounded-md p-3 ${!isBorrowingRestricted ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}
             >
               <p className="font-medium">
-                {isEligibleToBorrow
+                {!isBorrowingRestricted
                   ? "Borrowing Status: Active"
                   : "Borrowing Status: Restricted"}
               </p>
-              <p className="text-sm">{borrowingMessage}</p>
+              <p className="text-sm">
+                {user.status === "BLOCKED"
+                  ? "Your account has been blocked. Please return overdue items or settle unpaid fines."
+                  : !isEligibleToBorrow
+                    ? borrowingMessage
+                    : "You are eligible to borrow books"}
+              </p>
             </div>
           </div>
 
