@@ -64,6 +64,13 @@
       "when": 1745725339424,
       "tag": "0008_open_chameleon",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1745837328205,
+      "tag": "0009_many_wild_pack",
+      "breakpoints": true
     }
   ]
 }
