@@ -61,6 +61,11 @@ export const adminSideBarLinks = [
     route: "/admin/library-messages",
     text: "Library Messages",
   },
+  {
+    img: "/icons/admin/room.png",
+    route: "/admin/rooms",
+    text: "Rooms",
+  },
 ];
 
 export const adminLinks = [

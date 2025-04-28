@@ -199,3 +199,21 @@ export const bookHolds = pgTable("book_holds", {
     .defaultNow()
     .notNull(),
 });
+
+export const libraryRooms = pgTable("library_rooms", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  roomNumber: varchar("room_number", { length: 50 }).notNull(),
+  capacity: integer("capacity").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+export const roomBookings = pgTable("room_bookings", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  roomId: uuid("room_id").references(() => libraryRooms.id).notNull(),
+  userId: uuid("user_id").references(() => users.id).notNull(),
+  startTime: timestamp("start_time", { withTimezone: true }).notNull(),
+  endTime: timestamp("end_time", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
