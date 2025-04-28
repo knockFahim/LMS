@@ -16,6 +16,7 @@ import {
     isNull,
 } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { AVAILABLE_TIME_SLOTS, isValidTimeSlot } from "@/lib/roomTimeSlots";
 
 export async function addRoom({
     roomNumber,
@@ -96,6 +97,13 @@ export async function getAvailableRooms({
             );
         }
 
+        // Validate time slot
+        if (!isValidTimeSlot(startTime, endTime)) {
+            throw new Error(
+                "Invalid time slot. Please select a valid time slot from the available options."
+            );
+        }
+
         // Base query
         let query = db
             .select()
@@ -168,6 +176,13 @@ export async function bookRoom({
         if (new Date(startTime) > maxBookingDate) {
             throw new Error(
                 "Reservations can only be made up to 7 days in advance"
+            );
+        }
+
+        // Validate time slots
+        if (!isValidTimeSlot(startTime, endTime)) {
+            throw new Error(
+                "Invalid time slot. Please select a valid time slot."
             );
         }
 

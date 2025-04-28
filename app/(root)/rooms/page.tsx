@@ -42,10 +42,26 @@ import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
 import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import {
+    AVAILABLE_TIME_SLOTS,
+    TimeSlot,
+    getTimeSlotForDate,
+    getTimeSlotById,
+    getNearestTimeSlot,
+} from "@/lib/roomTimeSlots";
 
 const RoomsPage = () => {
     const [startTime, setStartTime] = useState("");
     const [endTime, setEndTime] = useState("");
+    const [selectedDate, setSelectedDate] = useState<string>("");
+    const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>("");
     const [roomType, setRoomType] = useState<"INDIVIDUAL_POD" | "GROUP_ROOM">(
         "INDIVIDUAL_POD"
     );
@@ -92,16 +108,21 @@ const RoomsPage = () => {
     // Initialize with today's date and time
     useEffect(() => {
         const now = new Date();
-        now.setMinutes(Math.ceil(now.getMinutes() / 15) * 15); // Round up to nearest 15 minutes
+        const today = now.toISOString().split("T")[0]; // YYYY-MM-DD format
+        setSelectedDate(today);
 
-        const start = new Date(now);
-        start.setHours(start.getHours() + 1); // Default start time is 1 hour from now
+        // Get the nearest time slot from now
+        const nearestSlot = getNearestTimeSlot(now);
+        if (nearestSlot) {
+            setSelectedTimeSlot(nearestSlot.id);
 
-        const end = new Date(start);
-        end.setHours(end.getHours() + 2); // Default duration is 2 hours
-
-        setStartTime(start.toISOString().slice(0, 16));
-        setEndTime(end.toISOString().slice(0, 16));
+            // Set the start and end time based on the selected date and time slot
+            const timeSlotTimes = getTimeSlotForDate(nearestSlot.id, now);
+            if (timeSlotTimes) {
+                setStartTime(timeSlotTimes.startTime.toISOString());
+                setEndTime(timeSlotTimes.endTime.toISOString());
+            }
+        }
     }, []);
 
     const fetchBookingHistory = async () => {
@@ -354,26 +375,98 @@ const RoomsPage = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                         <div>
                             <label className="text-sm font-medium block mb-1">
-                                Start Time
+                                Select Date
                             </label>
                             <Input
-                                type="datetime-local"
-                                value={startTime}
-                                onChange={(e) => setStartTime(e.target.value)}
+                                type="date"
+                                value={selectedDate}
+                                onChange={(e) => {
+                                    setSelectedDate(e.target.value);
+
+                                    // Update times when date changes
+                                    if (selectedTimeSlot && e.target.value) {
+                                        const selectedDateObj = new Date(
+                                            e.target.value
+                                        );
+                                        const timeSlotTimes =
+                                            getTimeSlotForDate(
+                                                selectedTimeSlot,
+                                                selectedDateObj
+                                            );
+                                        if (timeSlotTimes) {
+                                            setStartTime(
+                                                timeSlotTimes.startTime.toISOString()
+                                            );
+                                            setEndTime(
+                                                timeSlotTimes.endTime.toISOString()
+                                            );
+                                        }
+                                    }
+                                }}
                                 className="w-full"
+                                min={new Date().toISOString().split("T")[0]}
+                                max={
+                                    new Date(
+                                        Date.now() + 7 * 24 * 60 * 60 * 1000
+                                    )
+                                        .toISOString()
+                                        .split("T")[0]
+                                }
                             />
                         </div>
                         <div>
                             <label className="text-sm font-medium block mb-1">
-                                End Time
+                                Select Time Slot
                             </label>
-                            <Input
-                                type="datetime-local"
-                                value={endTime}
-                                onChange={(e) => setEndTime(e.target.value)}
-                                className="w-full"
-                            />
+                            <Select
+                                value={selectedTimeSlot}
+                                onValueChange={(value) => {
+                                    setSelectedTimeSlot(value);
+
+                                    // Update times when time slot changes
+                                    if (selectedDate) {
+                                        const selectedDateObj = new Date(
+                                            selectedDate
+                                        );
+                                        const timeSlotTimes =
+                                            getTimeSlotForDate(
+                                                value,
+                                                selectedDateObj
+                                            );
+                                        if (timeSlotTimes) {
+                                            setStartTime(
+                                                timeSlotTimes.startTime.toISOString()
+                                            );
+                                            setEndTime(
+                                                timeSlotTimes.endTime.toISOString()
+                                            );
+                                        }
+                                    }
+                                }}
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select a time slot" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {AVAILABLE_TIME_SLOTS.map((slot) => (
+                                        <SelectItem
+                                            key={slot.id}
+                                            value={slot.id}
+                                        >
+                                            {slot.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
+                    </div>
+
+                    <div className="mt-4 p-3 bg-blue-50 rounded-md">
+                        <p className="text-sm text-blue-700">
+                            <strong>Note:</strong> Only the listed time slots
+                            are available for booking. Each booking is for
+                            exactly one hour.
+                        </p>
                     </div>
                 </CardContent>
 

@@ -27,6 +27,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 const AdminRoomsPage = () => {
     const [rooms, setRooms] = useState<
@@ -43,6 +44,7 @@ const AdminRoomsPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [fixingDb, setFixingDb] = useState(false);
+    const [fixDbResult, setFixDbResult] = useState<any>(null);
     const [newRoom, setNewRoom] = useState({
         roomNumber: "",
         capacity: 0,
@@ -57,6 +59,19 @@ const AdminRoomsPage = () => {
         description: string | null;
     } | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [availableTimeSlots, setAvailableTimeSlots] = useState([
+        { id: "09:00-10:00", label: "09:00 AM - 10:00 AM" },
+        { id: "10:10-11:10", label: "10:10 AM - 11:10 AM" },
+        { id: "11:20-12:20", label: "11:20 AM - 12:20 PM" },
+        { id: "12:30-13:30", label: "12:30 PM - 01:30 PM" },
+        { id: "13:40-14:40", label: "01:40 PM - 02:40 PM" },
+        { id: "14:50-15:50", label: "02:50 PM - 03:50 PM" },
+        { id: "16:00-17:00", label: "04:00 PM - 05:00 PM" },
+        { id: "17:10-18:10", label: "05:10 PM - 06:10 PM" },
+        { id: "18:20-19:20", label: "06:20 PM - 07:20 PM" },
+        { id: "19:30-20:30", label: "07:30 PM - 08:30 PM" },
+        { id: "20:40-21:40", label: "08:40 PM - 09:40 PM" },
+    ]);
 
     useEffect(() => {
         // Fetch rooms from the backend
@@ -82,9 +97,12 @@ const AdminRoomsPage = () => {
                         "Failed to load rooms data. Invalid format received."
                     );
                 }
-            } catch (error) {
+            } catch (error: any) {
                 console.error("Error fetching rooms:", error);
-                setError("Failed to load rooms data. Please try again later.");
+                setError(
+                    error.message ||
+                        "Failed to load rooms data. Please try again later."
+                );
                 setRooms([]);
             } finally {
                 setLoading(false);
@@ -98,6 +116,7 @@ const AdminRoomsPage = () => {
     const fixDatabaseSchema = async () => {
         try {
             setFixingDb(true);
+            setFixDbResult(null);
             const response = await fetch("/api/fix-room-bookings", {
                 method: "POST",
                 headers: {
@@ -106,14 +125,59 @@ const AdminRoomsPage = () => {
             });
 
             const data = await response.json();
+            setFixDbResult(data);
 
             if (response.ok) {
+                const { changes } = data;
+                let message = "Database check completed. ";
+
+                if (
+                    changes.typeAdded ||
+                    changes.statusColumnAdded ||
+                    changes.checkinTimeColumnAdded
+                ) {
+                    message += "Fixed issues: ";
+                    const fixes = [];
+                    if (changes.typeAdded)
+                        fixes.push("created booking status type");
+                    if (changes.statusColumnAdded)
+                        fixes.push("added status column");
+                    if (changes.checkinTimeColumnAdded)
+                        fixes.push("added checkin_time column");
+                    message += fixes.join(", ");
+                } else {
+                    message += "No issues found, database schema is correct.";
+                }
+
                 toast({
                     title: "Database Updated",
-                    description: data.columnAdded
-                        ? "Successfully added missing status column to room_bookings table."
-                        : "Room bookings table is already correctly configured.",
+                    description: message,
                 });
+
+                // Retry fetch after fixing
+                if (
+                    changes.statusColumnAdded ||
+                    changes.checkinTimeColumnAdded
+                ) {
+                    setTimeout(() => {
+                        setLoading(true);
+                        setError(null);
+                        fetch("/api/rooms")
+                            .then((res) => res.json())
+                            .then((data) => {
+                                if (Array.isArray(data)) {
+                                    setRooms(data);
+                                }
+                            })
+                            .catch((err) => {
+                                console.error(err);
+                                setError(
+                                    "Failed to reload data after fixing database."
+                                );
+                            })
+                            .finally(() => setLoading(false));
+                    }, 1000);
+                }
             } else {
                 toast({
                     title: "Error",
@@ -122,11 +186,13 @@ const AdminRoomsPage = () => {
                     variant: "destructive",
                 });
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error fixing database:", error);
             toast({
                 title: "Error",
-                description: "Failed to connect to database fix endpoint",
+                description:
+                    error.message ||
+                    "Failed to connect to database fix endpoint",
                 variant: "destructive",
             });
         } finally {
@@ -274,21 +340,55 @@ const AdminRoomsPage = () => {
         }
     };
 
+    // Helper function to determine if there's a database schema error
+    const hasDbSchemaError = () => {
+        if (!error) return false;
+        return (
+            error.includes("column room_bookings.status does not exist") ||
+            error.includes("column room_bookings.checkin_time does not exist")
+        );
+    };
+
     return (
         <section className="p-6">
             <h1 className="text-2xl font-bold">Manage Rooms</h1>
-            {error &&
-                error.includes(
-                    "column room_bookings.status does not exist"
-                ) && (
-                    <div className="mt-4 p-4 bg-amber-50 border border-amber-300 rounded-md">
-                        <h3 className="font-semibold text-amber-800">
-                            Database Schema Issue Detected
-                        </h3>
-                        <p className="text-amber-700 mt-1">
-                            Your database is missing the required status column
-                            in the room_bookings table.
+
+            <div className="mt-6 bg-white p-6 rounded-lg shadow-md">
+                <h2 className="text-xl font-semibold mb-4">
+                    Available Time Slots
+                </h2>
+                <p className="mb-4 text-gray-600">
+                    The following time slots are available for room bookings:
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                    {availableTimeSlots.map((slot) => (
+                        <div
+                            key={slot.id}
+                            className="p-2 bg-blue-50 rounded border border-blue-100"
+                        >
+                            <span className="font-medium">{slot.label}</span>
+                        </div>
+                    ))}
+                </div>
+
+                <p className="mt-4 text-sm text-gray-500">
+                    These are the only time slots available for booking. Users
+                    cannot book rooms at arbitrary times.
+                </p>
+            </div>
+
+            {hasDbSchemaError() && (
+                <Alert className="mt-4 bg-amber-50 border border-amber-300">
+                    <AlertTitle className="text-amber-800">
+                        Database Schema Issue Detected
+                    </AlertTitle>
+                    <AlertDescription className="text-amber-700">
+                        <p className="mt-1">
+                            Your database is missing required columns in the
+                            room_bookings table.
                         </p>
+                        <p className="mt-1 text-sm">{error}</p>
                         <Button
                             onClick={fixDatabaseSchema}
                             disabled={fixingDb}
@@ -298,8 +398,21 @@ const AdminRoomsPage = () => {
                                 ? "Fixing Database..."
                                 : "Fix Database Schema"}
                         </Button>
-                    </div>
-                )}
+
+                        {fixDbResult && (
+                            <div className="mt-2 text-sm">
+                                <p>
+                                    <strong>Fix Results:</strong>
+                                </p>
+                                <pre className="p-2 bg-white/50 rounded mt-1 overflow-auto max-h-40">
+                                    {JSON.stringify(fixDbResult, null, 2)}
+                                </pre>
+                            </div>
+                        )}
+                    </AlertDescription>
+                </Alert>
+            )}
+
             <div className="mt-4">
                 <form className="space-y-4 bg-white p-6 rounded-md shadow-md">
                     <div className="flex flex-col">
