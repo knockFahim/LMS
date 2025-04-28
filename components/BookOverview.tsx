@@ -7,7 +7,8 @@ import PlaceHold from "./PlaceHold";
 import { Button } from "./ui/button";
 
 import { db } from "@/database/drizzle";
-import { users, borrowRecords } from "@/database/schema";
+import { users, borrowRecords, fines } from "@/database/schema";
+import { checkUserBorrowingEligibility } from "@/lib/actions/fines";
 
 interface Props extends Book {
   userId: string;
@@ -48,12 +49,29 @@ const BookOverview = async ({
 
   const isAlreadyBorrowing = userBorrowingRecord.length > 0;
 
+  // Check if user has any overdue books or unpaid fines
+  const eligibilityResult = await checkUserBorrowingEligibility(userId);
+
+  // Correctly determine the borrowing eligibility message
+  let eligibilityMessage;
+  if (availableCopies <= 0) {
+    eligibilityMessage = "Book is not available";
+  } else if (user.status !== "APPROVED") {
+    eligibilityMessage = "You are not allowed to borrow this book until your account is approved";
+  } else if (!eligibilityResult.isEligible) {
+    eligibilityMessage = eligibilityResult.message;
+  } else {
+    eligibilityMessage = "You can borrow this book";
+  }
+
   const borrowingEligibility = {
-    isEligible: availableCopies > 0 && user.status === "APPROVED",
-    message:
-      availableCopies <= 0
-        ? "Book is not available"
-        : "You are not allowed to borrow this book until your account is approved",
+    isEligible:
+      // Base conditions
+      availableCopies > 0 &&
+      user.status === "APPROVED" &&
+      // New condition: no overdue books or unpaid fines
+      eligibilityResult.isEligible,
+    message: eligibilityMessage,
   };
 
   return (
@@ -109,6 +127,23 @@ const BookOverview = async ({
           <p className="mt-4 font-medium text-red-500">
             Your account must be approved to place holds on books
           </p>
+        )}
+
+        {!eligibilityResult.isEligible && (
+          <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3 text-amber-800">
+            <p className="font-medium">Borrowing Restricted</p>
+            <p className="text-sm">{eligibilityResult.message}</p>
+            {eligibilityResult.overdueCount > 0 && (
+              <p className="mt-1 text-sm">
+                Overdue books: {eligibilityResult.overdueCount}
+              </p>
+            )}
+            {eligibilityResult.fineCount > 0 && (
+              <p className="mt-1 text-sm">
+                Unpaid fines: {eligibilityResult.totalFines} BDT
+              </p>
+            )}
+          </div>
         )}
       </div>
 

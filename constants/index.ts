@@ -52,6 +52,11 @@ export const adminSideBarLinks = [
     text: "Account Requests",
   },
   {
+    img: "/icons/admin/dollar-sign.svg",
+    route: "/admin/fines",
+    text: "Fines Management",
+  },
+  {
     img: "/icons/admin/announcement.svg",
     route: "/admin/announcements",
     text: "Announcements",
@@ -98,6 +103,11 @@ export const adminLinks = [
     label: "Book Requests",
     href: "/admin/book-requests",
     icon: "/icons/admin/receipt.svg",
+  },
+  {
+    label: "Fines Management",
+    href: "/admin/fines",
+    icon: "/icons/admin/dollar-sign.svg",
   },
   {
     label: "Announcements",

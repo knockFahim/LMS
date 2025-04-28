@@ -8,14 +8,22 @@ import {
   timestamp,
   uuid,
   boolean,
+  decimal,
 } from "drizzle-orm/pg-core";
 
 const ROLE_ENUM = pgEnum("role", ["USER", "ADMIN"]);
-const STATUS_ENUM = pgEnum("status", ["PENDING", "APPROVED", "REJECTED"]);
+const STATUS_ENUM = pgEnum("status", [
+  "PENDING",
+  "APPROVED",
+  "REJECTED",
+  "BLOCKED",
+]);
 const BORROW_STATUS_ENUM = pgEnum("borrow_status", [
   "OVERDUE",
   "BORROWED",
   "RETURNED",
+  "RECALLED",
+  "LOST",
 ]);
 const REQUEST_STATUS_ENUM = pgEnum("request_status", [
   "PENDING",
@@ -38,6 +46,16 @@ const HOLD_STATUS_ENUM = pgEnum("hold_status", [
   "FULFILLED", // Hold was fulfilled (book was borrowed by requestor)
   "CANCELLED", // Hold was cancelled by user or admin
   "EXPIRED", // Hold expired (user didn't pick up the book in time)
+]);
+const FINE_STATUS_ENUM = pgEnum("fine_status", [
+  "PENDING", // Fine is pending payment
+  "PAID", // Fine has been paid
+  "WAIVED", // Fine was waived by admin
+]);
+const FINE_TYPE_ENUM = pgEnum("fine_type", [
+  "OVERDUE", // Fine for overdue book
+  "DAMAGE", // Fine for damaged book
+  "LOST", // Fine for lost book
 ]);
 
 export const users = pgTable("users", {
@@ -198,4 +216,28 @@ export const bookHolds = pgTable("book_holds", {
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .defaultNow()
     .notNull(),
+});
+
+// Fines table for tracking user penalties
+export const fines = pgTable("fines", {
+  id: uuid("id").notNull().primaryKey().defaultRandom().unique(),
+  userId: uuid("user_id")
+    .references(() => users.id)
+    .notNull(),
+  borrowRecordId: uuid("borrow_record_id")
+    .references(() => borrowRecords.id)
+    .notNull(),
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  fineType: FINE_TYPE_ENUM("fine_type").notNull(),
+  status: FINE_STATUS_ENUM("status").default("PENDING").notNull(),
+  description: text("description"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  paidAt: timestamp("paid_at", { withTimezone: true }),
+  waivedAt: timestamp("waived_at", { withTimezone: true }),
+  waivedBy: uuid("waived_by").references(() => users.id),
 });

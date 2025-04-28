@@ -8,11 +8,13 @@ import { auth, signOut } from "@/auth";
 import Avatar from "@/components/Avatar";
 import BookList from "@/components/BookList";
 import NotFound from "@/components/NotFound";
+import UserFines from "@/components/UserFines";
 import { Button } from "@/components/ui/button";
 import BookRequestsList from "@/components/BookRequestsList";
 import ExtensionRequestForm from "@/components/ExtensionRequestForm";
 import ExtensionRequestsHistory from "@/components/ExtensionRequestsHistory";
 import UserHolds from "@/components/UserHolds";
+import BorrowingStatusUpdater from "@/components/BorrowingStatusUpdater";
 
 import { db } from "@/database/drizzle";
 import { users } from "@/database/schema";
@@ -21,6 +23,7 @@ import config from "@/lib/config";
 import { getBorrowedBooks } from "@/lib/actions/book";
 import { getUserBookRequests } from "@/lib/actions/bookRequest";
 import { getUserHolds } from "@/lib/actions/holds";
+import { checkUserBorrowingEligibility } from "@/lib/actions/fines";
 
 interface BorrowedBookProps {
   data: BorrowedBook[];
@@ -54,6 +57,7 @@ const Page = async () => {
     { data: borrowedBooks, success },
     { data: bookRequests, success: requestsSuccess },
     holdsResult,
+    eligibilityResult,
   ] = await Promise.all([
     getBorrowedBooks(session?.user?.id) as Promise<BorrowedBookProps>,
     getUserBookRequests(session?.user?.id) as Promise<BookRequestsProps>,
@@ -61,13 +65,20 @@ const Page = async () => {
       console.error("Error fetching user holds:", error);
       return { success: false, data: [], error: "Could not load holds" };
     }) as Promise<UserHoldsProps>,
+    checkUserBorrowingEligibility(session?.user?.id),
   ]);
 
   const { data: userHolds = [], success: holdsSuccess = false } =
     holdsResult || {};
 
+  const isEligibleToBorrow = eligibilityResult.isEligible;
+  const borrowingMessage = eligibilityResult.message;
+
   return (
     <>
+      {/* Client component that updates borrowing status without affecting render */}
+      <BorrowingStatusUpdater userId={session.user.id} />
+
       <section className="profile">
         <div className="id-card">
           <div className="inner">
@@ -125,6 +136,18 @@ const Page = async () => {
                 {new Date().getFullYear() + 1} Academic Year
               </p>
             </div>
+
+            {/* Show borrowing status indicator */}
+            <div
+              className={`mt-4 rounded-md p-3 ${isEligibleToBorrow ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"}`}
+            >
+              <p className="font-medium">
+                {isEligibleToBorrow
+                  ? "Borrowing Status: Active"
+                  : "Borrowing Status: Restricted"}
+              </p>
+              <p className="text-sm">{borrowingMessage}</p>
+            </div>
           </div>
 
           <form
@@ -141,6 +164,16 @@ const Page = async () => {
         </div>
 
         <div className="flex-1 space-y-16">
+          {/* Add Fines section at the top */}
+          <div>
+            <h2 className="mb-4 font-bebas-neue text-4xl text-light-100">
+              Library Fines
+            </h2>
+            <div className="rounded-xl bg-dark-300 p-4">
+              <UserFines userId={session.user.id} />
+            </div>
+          </div>
+
           {success && (
             <div>
               {borrowedBooks.length > 0 ? (
