@@ -18,7 +18,12 @@ interface Props {
   };
 }
 
-const PlaceHold = ({ userId, bookId, bookTitle, borrowingEligibility }: Props) => {
+const PlaceHold = ({
+  userId,
+  bookId,
+  bookTitle,
+  borrowingEligibility,
+}: Props) => {
   const router = useRouter();
   const [isPlacingHold, setIsPlacingHold] = useState(false);
   const [holdCount, setHoldCount] = useState(0);
@@ -52,9 +57,10 @@ const PlaceHold = ({ userId, bookId, bookTitle, borrowingEligibility }: Props) =
   const handlePlaceHold = async () => {
     // Check if user is eligible to place holds (no overdue books or unpaid fines)
     if (borrowingEligibility && !borrowingEligibility.isEligible) {
-      const isOverdueOrFineMessage = borrowingEligibility.message.includes("overdue") || 
-                                  borrowingEligibility.message.includes("fine");
-      
+      const isOverdueOrFineMessage =
+        borrowingEligibility.message.includes("overdue") ||
+        borrowingEligibility.message.includes("fine");
+
       toast({
         title: isOverdueOrFineMessage ? "Hold Placement Restricted" : "Error",
         description: borrowingEligibility.message,

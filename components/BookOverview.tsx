@@ -123,10 +123,10 @@ const BookOverview = async ({
             borrowingEligibility={borrowingEligibility}
           />
         ) : user.status === "APPROVED" ? (
-          <PlaceHold 
-            bookId={id} 
-            userId={userId} 
-            bookTitle={title} 
+          <PlaceHold
+            bookId={id}
+            userId={userId}
+            bookTitle={title}
             borrowingEligibility={borrowingEligibility}
           />
         ) : (

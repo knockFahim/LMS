@@ -50,9 +50,10 @@ const BorrowBook = ({ userId, bookId, borrowingEligibility }: Props) => {
 
     if (!borrowingEligibility.isEligible) {
       // More descriptive error message for borrowing restrictions
-      const isOverdueOrFineMessage = borrowingEligibility.message.includes("overdue") || 
-                                   borrowingEligibility.message.includes("fine");
-      
+      const isOverdueOrFineMessage =
+        borrowingEligibility.message.includes("overdue") ||
+        borrowingEligibility.message.includes("fine");
+
       toast({
         title: isOverdueOrFineMessage ? "Borrowing Restricted" : "Error",
         description: borrowingEligibility.message,
