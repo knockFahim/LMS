@@ -97,12 +97,12 @@ export async function getAvailableRooms({
             );
         }
 
-        // Temporarily disable time slot validation
-        // if (!isValidTimeSlot(startTime, endTime)) {
-        //     throw new Error(
-        //         "Invalid time slot. Please select a valid time slot from the available options."
-        //     );
-        // }
+        // Validate time slot
+        if (!isValidTimeSlot(startTime, endTime)) {
+            throw new Error(
+                "Invalid time slot. Please select a valid time slot from the available options."
+            );
+        }
 
         // Base query
         let query = db
