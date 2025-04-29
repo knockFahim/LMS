@@ -115,52 +115,95 @@ export function getTimeSlotForDate(
     const timeSlot = getTimeSlotById(timeSlotId);
     if (!timeSlot) return null;
 
-    const startTime = new Date(date);
-    startTime.setHours(timeSlot.startHour, timeSlot.startMinute, 0, 0);
+    // Create new date objects using the same date but with our specific time slot hours and minutes
+    // Use the year, month, day from the input date
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const day = date.getDate();
 
-    const endTime = new Date(date);
-    endTime.setHours(timeSlot.endHour, timeSlot.endMinute, 0, 0);
+    const startTime = new Date(
+        year,
+        month,
+        day,
+        timeSlot.startHour,
+        timeSlot.startMinute,
+        0
+    );
+    const endTime = new Date(
+        year,
+        month,
+        day,
+        timeSlot.endHour,
+        timeSlot.endMinute,
+        0
+    );
+
+    console.log("Generated time slot dates:", {
+        timeSlotId,
+        originalDate: date.toISOString(),
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        localOriginalDate: date.toString(),
+        localStartTime: startTime.toString(),
+        localEndTime: endTime.toString(),
+    });
 
     return { startTime, endTime };
 }
 
 // Check if a specific time matches an available time slot boundary
 export function isValidTimePoint(date: Date): boolean {
-    const hours = date.getHours();
     const minutes = date.getMinutes();
 
-    return AVAILABLE_TIME_SLOTS.some((slot) => {
-        // Start time matches
-        if (slot.startHour === hours && slot.startMinute === minutes) {
-            return true;
-        }
+    // Instead of comparing exact hours, just check if the minutes value
+    // matches one of our slot boundaries
+    const allSlotMinutes = new Set();
 
-        // End time matches
-        if (slot.endHour === hours && slot.endMinute === minutes) {
-            return true;
-        }
-
-        return false;
+    AVAILABLE_TIME_SLOTS.forEach((slot) => {
+        allSlotMinutes.add(slot.startMinute);
+        allSlotMinutes.add(slot.endMinute);
     });
+
+    return allSlotMinutes.has(minutes);
 }
 
 // Check if a start time and end time match a valid booking slot
 export function isValidTimeSlot(startTime: Date, endTime: Date): boolean {
-    // Check if any of our predefined slots match this time range
-    return AVAILABLE_TIME_SLOTS.some((slot) => {
-        const startHour = startTime.getHours();
-        const startMinute = startTime.getMinutes();
-        const endHour = endTime.getHours();
-        const endMinute = endTime.getMinutes();
-
-        // Check if both start and end times match a slot
-        return (
-            startHour === slot.startHour &&
-            startMinute === slot.startMinute &&
-            endHour === slot.endHour &&
-            endMinute === slot.endMinute
-        );
+    console.log("Time slot validation:", {
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+        localStartTime: startTime.toString(),
+        localEndTime: endTime.toString(),
+        timeDiff:
+            (endTime.getTime() - startTime.getTime()) / 60000 + " minutes",
     });
+
+    // Calculate the time difference in minutes
+    const durationMinutes =
+        (endTime.getTime() - startTime.getTime()) / (1000 * 60);
+
+    // Check if the duration matches one of our time slots (most are 60 minutes)
+    const correctDuration = AVAILABLE_TIME_SLOTS.some((slot) => {
+        const slotDurationMinutes =
+            slot.endHour * 60 +
+            slot.endMinute -
+            (slot.startHour * 60 + slot.startMinute);
+        return Math.abs(durationMinutes - slotDurationMinutes) < 2; // Allow 2 minutes tolerance
+    });
+
+    if (!correctDuration) {
+        return false;
+    }
+
+    // Check if the start time minutes match one of our slot patterns
+    const startMinute = startTime.getMinutes();
+    const validStartMinutes = [
+        ...new Set(AVAILABLE_TIME_SLOTS.map((slot) => slot.startMinute)),
+    ];
+
+    // Also check that booking starts at the beginning of an hour or at one of our predefined minute marks
+    // This ensures we're not just checking duration but also that bookings start at proper times
+    return validStartMinutes.includes(startMinute);
 }
 
 // Get the nearest available time slot for a given date
