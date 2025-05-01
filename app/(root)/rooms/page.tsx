@@ -134,8 +134,16 @@ const RoomsPage = () => {
             setIsLoading(false);
 
             // Also check booking limit
-            const limitInfo = await hasUserReachedBookingLimit(session.user.id);
-            setBookingLimitInfo(limitInfo);
+            const limitResult = await hasUserReachedBookingLimit(session.user.id);
+            if (limitResult.success) {
+                setBookingLimitInfo(limitResult.data);
+            } else {
+                toast({
+                    title: "Error",
+                    description: limitResult.error || "Failed to check booking limit",
+                    variant: "destructive",
+                });
+            }
         } catch (error) {
             console.error("Error fetching booking history:", error);
             setIsLoading(false);
@@ -174,7 +182,18 @@ const RoomsPage = () => {
                 endTime: new Date(endTime),
                 roomType,
             });
-            setAvailableRooms(response);
+            
+            if (!response.success) {
+                toast({
+                    title: "Error",
+                    description: response.error || "Failed to get available rooms",
+                    variant: "destructive",
+                });
+                setIsLoading(false);
+                return;
+            }
+            
+            setAvailableRooms(response.data);
             setIsLoading(false);
         } catch (error: any) {
             setIsLoading(false);
@@ -203,13 +222,23 @@ const RoomsPage = () => {
 
         try {
             setIsLoading(true);
-            await bookRoom({
+            const result = await bookRoom({
                 roomId: selectedRoomId,
                 userId: session.user.id,
                 startTime: new Date(startTime),
                 endTime: new Date(endTime),
                 notes: bookingNotes || undefined,
             });
+
+            if (!result.success) {
+                toast({
+                    title: "Error",
+                    description: result.error || "Failed to book room",
+                    variant: "destructive",
+                });
+                setIsLoading(false);
+                return;
+            }
 
             toast({
                 title: "Success",
@@ -240,7 +269,17 @@ const RoomsPage = () => {
 
         try {
             setIsLoading(true);
-            await cancelBooking(bookingId, session.user.id);
+            const result = await cancelBooking(bookingId, session.user.id);
+            
+            if (!result.success) {
+                toast({
+                    title: "Error",
+                    description: result.error || "Failed to cancel booking",
+                    variant: "destructive",
+                });
+                setIsLoading(false);
+                return;
+            }
 
             toast({
                 title: "Success",
@@ -265,7 +304,17 @@ const RoomsPage = () => {
 
         try {
             setIsLoading(true);
-            await checkInBooking(bookingId, session.user.id);
+            const result = await checkInBooking(bookingId, session.user.id);
+            
+            if (!result.success) {
+                toast({
+                    title: "Error",
+                    description: result.error || "Failed to check in",
+                    variant: "destructive",
+                });
+                setIsLoading(false);
+                return;
+            }
 
             toast({
                 title: "Success",

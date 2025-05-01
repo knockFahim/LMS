@@ -88,20 +88,25 @@ export async function getAvailableRooms({
         maxBookingDate.setDate(now.getDate() + 7); // 7 days from now
 
         if (new Date(startTime) < now) {
-            throw new Error("Cannot book a room in the past");
+            return {
+                success: false,
+                error: "Cannot book a room in the past",
+            };
         }
 
         if (new Date(startTime) > maxBookingDate) {
-            throw new Error(
-                "Reservations can only be made up to 7 days in advance"
-            );
+            return {
+                success: false,
+                error: "Reservations can only be made up to 7 days in advance",
+            };
         }
 
         // Validate time slot
         if (!isValidTimeSlot(startTime, endTime)) {
-            throw new Error(
-                "Invalid time slot. Please select a valid time slot from the available options."
-            );
+            return {
+                success: false,
+                error: "Invalid time slot. Please select a valid time slot from the available options.",
+            };
         }
 
         // Base query
@@ -143,10 +148,19 @@ export async function getAvailableRooms({
 
         // Execute query
         const rooms = await query.orderBy(asc(libraryRooms.roomNumber));
-        return rooms;
+        return {
+            success: true,
+            data: rooms,
+        };
     } catch (error) {
         console.error("Error fetching available rooms:", error);
-        throw error;
+        return {
+            success: false,
+            error:
+                error instanceof Error
+                    ? error.message
+                    : "Error fetching available rooms",
+        };
     }
 }
 
@@ -170,20 +184,25 @@ export async function bookRoom({
         maxBookingDate.setDate(now.getDate() + 7); // 7 days from now
 
         if (new Date(startTime) < now) {
-            throw new Error("Cannot book a room in the past");
+            return {
+                success: false,
+                error: "Cannot book a room in the past",
+            };
         }
 
         if (new Date(startTime) > maxBookingDate) {
-            throw new Error(
-                "Reservations can only be made up to 7 days in advance"
-            );
+            return {
+                success: false,
+                error: "Reservations can only be made up to 7 days in advance",
+            };
         }
 
         // Validate time slots
         if (!isValidTimeSlot(startTime, endTime)) {
-            throw new Error(
-                "Invalid time slot. Please select a valid time slot."
-            );
+            return {
+                success: false,
+                error: "Invalid time slot. Please select a valid time slot.",
+            };
         }
 
         // Check for overlapping bookings by this user
@@ -204,9 +223,10 @@ export async function bookRoom({
             );
 
         if (overlappingBookings.length > 0) {
-            throw new Error(
-                "You already have a booking that overlaps with this time."
-            );
+            return {
+                success: false,
+                error: "You already have a booking that overlaps with this time.",
+            };
         }
 
         // Check for no-show history
@@ -225,9 +245,10 @@ export async function bookRoom({
             );
 
         if (noShowCount[0].count >= 3) {
-            throw new Error(
-                "Your booking privileges are suspended due to multiple no-shows. Please contact the library administrator."
-            );
+            return {
+                success: false,
+                error: "Your booking privileges are suspended due to multiple no-shows. Please contact the library administrator.",
+            };
         }
 
         // Create the booking
@@ -244,10 +265,17 @@ export async function bookRoom({
             .returning();
 
         revalidatePath("/rooms");
-        return result[0];
+        return {
+            success: true,
+            data: result[0],
+        };
     } catch (error) {
         console.error("Error booking room:", error);
-        throw error;
+        return {
+            success: false,
+            error:
+                error instanceof Error ? error.message : "Failed to book room",
+        };
     }
 }
 
@@ -390,12 +418,18 @@ export async function cancelBooking(bookingId: string, userId: string) {
             .limit(1);
 
         if (!booking.length) {
-            throw new Error("Booking not found or does not belong to you");
+            return {
+                success: false,
+                error: "Booking not found or does not belong to you"
+            };
         }
 
         // Cannot cancel a booking that has already started
         if (new Date(booking[0].startTime) < new Date()) {
-            throw new Error("Cannot cancel a booking that has already started");
+            return {
+                success: false,
+                error: "Cannot cancel a booking that has already started"
+            };
         }
 
         // Update booking status to CANCELLED
@@ -408,10 +442,16 @@ export async function cancelBooking(bookingId: string, userId: string) {
             .where(eq(roomBookings.id, bookingId));
 
         revalidatePath("/rooms");
-        return { success: true };
+        return { 
+            success: true,
+            data: { id: bookingId }
+        };
     } catch (error) {
         console.error("Error cancelling booking:", error);
-        throw error;
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : "Failed to cancel booking"
+        };
     }
 }
 
@@ -431,9 +471,10 @@ export async function checkInBooking(bookingId: string, userId: string) {
             .limit(1);
 
         if (!booking.length) {
-            throw new Error(
-                "Booking not found, already checked-in, or does not belong to you"
-            );
+            return {
+                success: false,
+                error: "Booking not found, already checked-in, or does not belong to you"
+            };
         }
 
         const bookingStart = new Date(booking[0].startTime);
@@ -444,9 +485,10 @@ export async function checkInBooking(bookingId: string, userId: string) {
         fifteenMinutesBefore.setMinutes(fifteenMinutesBefore.getMinutes() - 15);
 
         if (now < fifteenMinutesBefore) {
-            throw new Error(
-                "Cannot check in more than 15 minutes before your booking time"
-            );
+            return {
+                success: false,
+                error: "Cannot check in more than 15 minutes before your booking time"
+            };
         }
 
         // Update booking status to CHECKED_IN
@@ -460,10 +502,16 @@ export async function checkInBooking(bookingId: string, userId: string) {
             .where(eq(roomBookings.id, bookingId));
 
         revalidatePath("/rooms");
-        return { success: true };
+        return { 
+            success: true,
+            data: { id: bookingId }
+        };
     } catch (error) {
         console.error("Error checking in:", error);
-        throw error;
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : "Failed to check in"
+        };
     }
 }
 
@@ -530,11 +578,20 @@ export async function hasUserReachedBookingLimit(userId: string) {
 
         // Users are limited to 3 active bookings at a time
         return {
-            hasReachedLimit: bookingCount[0].count >= 3,
-            currentBookings: bookingCount[0].count,
+            success: true,
+            data: {
+                hasReachedLimit: bookingCount[0].count >= 3,
+                currentBookings: bookingCount[0].count,
+            },
         };
     } catch (error) {
         console.error("Error checking booking limit:", error);
-        throw error;
+        return {
+            success: false,
+            error:
+                error instanceof Error
+                    ? error.message
+                    : "Failed to check booking limit",
+        };
     }
 }
